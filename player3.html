@@ -18,81 +18,64 @@
     body {
       background: var(--bg); color: var(--text);
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      font-size: 14px; height: 100dvh; padding: 14px 20px;
-      max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; overflow: hidden;
+      font-size: 14px; padding: 20px; max-width: 800px; margin: 0 auto;
     }
-    .scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 10px; padding-bottom: 4px; }
-    h1 { font-size: 1.05rem; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-    h1 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; flex-shrink: 0; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
     .card-title { font-size: 0.65rem; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; font-weight: 600; }
     .row { display: flex; gap: 8px; align-items: center; }
-    select { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 10px; font-size: 0.88rem; outline: none; }
-    button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 0.85rem; }
-    button.accent { background: var(--accent); border-color: var(--accent2); font-weight: 600; min-width: 88px; }
-    .dropzone { border: 2px dashed var(--border); border-radius: 10px; padding: 14px 16px; text-align: center; cursor: pointer; color: var(--dim); }
-    .ch-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-    .ch-pill { font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; width: 120px; text-align: center; }
-    .ch-pill.bass { background: #0f293a; color: #34d399; }
-    .ch-pill.perc { background: #1a2a0f; color: #86efac; }
-    .ch-pill.drums { background: #1e1033; color: #a78bfa; }
-    .transport-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .prog-wrap { flex: 1; height: 5px; background: var(--surface2); border-radius: 4px; cursor: pointer; }
-    .prog-fill { height: 100%; background: var(--accent); border-radius: 4px; width: 0%; pointer-events: none; }
-    .status { font-size: 0.76rem; margin-top: 6px; min-height: 1em; color: var(--dim); }
+    select { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px; font-size: 0.9rem; }
+    button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 16px; cursor: pointer; }
+    button.accent { background: var(--accent); border: none; font-weight: 600; }
+    .status { font-size: 0.75rem; margin-top: 6px; color: var(--dim); }
     .status.ok { color: var(--green); }
     .status.err { color: var(--red); }
+    .ch-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .ch-pill { font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; width: 110px; text-align: center; }
+    .ch-pill.drums { background: #1e1033; color: #a78bfa; }
+    .ch-pill.perc { background: #1a2a0f; color: #86efac; }
+    .ch-pill.bass { background: #0f293a; color: #34d399; }
+    .prog-wrap { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; margin: 15px 0; cursor: pointer; }
+    .prog-fill { height: 100%; background: var(--accent); width: 0%; border-radius: 3px; }
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-<h1><span class="dot"></span> MIDI Player → Alesis SR18</h1>
+<h2 style="margin-bottom: 20px;">MIDI Player → Alesis SR18</h2>
 
-<div class="scroll-area">
-  <div class="card">
-    <div class="card-title">MIDI Uitgang</div>
-    <div class="row">
-      <select id="deviceSel" onchange="onDeviceChange()">
-        <option value="">-- Zoek naar apparaten... --</option>
-      </select>
-      <button onclick="refreshDevices()">↺</button>
-    </div>
-    <div class="status" id="deviceStatus"></div>
+<div class="card">
+  <div class="card-title">1. MIDI Uitgang</div>
+  <div class="row">
+    <select id="deviceSel" onchange="onDeviceChange()">
+      <option value="">-- Zoek naar apparaten... --</option>
+    </select>
+    <button onclick="initMidi()">↺</button>
   </div>
+  <div id="deviceStatus" class="status">Wachten op MIDI...</div>
+</div>
 
-  <div class="card">
-    <div class="card-title">MIDI Bestand</div>
-    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-      <div id="dzText">Sleep een .mid bestand hierheen of klik</div>
-    </div>
-    <input type="file" id="fileInput" accept=".mid,.midi" class="hidden">
-    <div class="status" id="fileStatus"></div>
-  </div>
+<div class="card">
+  <div class="card-title">2. MIDI Bestand</div>
+  <input type="file" id="fileInput" accept=".mid,.midi" style="width: 100%;">
+  <div id="fileStatus" class="status">Klaar om te laden.</div>
+</div>
 
-  <div class="card hidden" id="tracksCard">
-    <div class="card-title">Track toewijzing</div>
-    <div id="trackRows">
-      <div class="ch-row"><span class="ch-pill drums">DRUMS (10)</span><select id="selCh10" onchange="assignTrack(9, this.value)"></select></div>
-      <div class="ch-row"><span class="ch-pill perc">PERC (2)</span><select id="selCh2" onchange="assignTrack(1, this.value)"></select></div>
-      <div class="ch-row"><span class="ch-pill bass">BASS (1)</span><select id="selCh1" onchange="assignTrack(0, this.value)"></select></div>
-    </div>
-  </div>
+<div class="card hidden" id="tracksCard">
+  <div class="card-title">3. Automatische Toewijzing</div>
+  <div class="ch-row"><span class="ch-pill drums">DRUMS (Ch 10)</span><select id="selCh10" onchange="assignTrack(9, this.value)"></select></div>
+  <div class="ch-row"><span class="ch-pill perc">PERC (Ch 2)</span><select id="selCh2" onchange="assignTrack(1, this.value)"></select></div>
+  <div class="ch-row"><span class="ch-pill bass">BASS (Ch 1)</span><select id="selCh1" onchange="assignTrack(0, this.value)"></select></div>
+</div>
 
-  <div class="card hidden" id="transportCard">
-    <div class="card-title">Bediening</div>
-    <div class="transport-row">
-      <button class="accent" id="playBtn" onclick="togglePlay()" disabled>▶ Play</button>
-      <button onclick="stopAll()">⏹ Stop</button>
-      <div style="margin-left:auto; font-size:12px; color:var(--dim)">
-        Tempo: <input type="range" id="tempoSlider" min="50" max="150" value="100" style="width:80px">
-      </div>
-    </div>
-    <div class="prog-row" style="display:flex; align-items:center; gap:10px; margin-top:12px;">
-      <div class="prog-wrap" id="progWrap" onclick="seek(event)"><div class="prog-fill" id="progFill"></div></div>
-      <div id="timeLabel" style="font-size:12px; font-variant-numeric: tabular-nums;">0:00 / 0:00</div>
-    </div>
+<div class="card hidden" id="transportCard">
+  <div class="card-title">4. Bediening</div>
+  <div class="row">
+    <button id="playBtn" class="accent" onclick="togglePlay()" disabled>▶ PLAY</button>
+    <button onclick="stopAll()">⏹ STOP</button>
+    <div style="margin-left: auto;">Tempo: <input type="range" id="tempoSlider" min="50" max="150" value="100" style="width: 80px;"></div>
   </div>
+  <div class="prog-wrap" onclick="seek(event)"><div class="prog-fill" id="progFill"></div></div>
+  <div id="timeLabel" style="text-align: center; font-size: 12px; color: var(--dim);">0:00 / 0:00</div>
 </div>
 
 <script>
@@ -100,17 +83,16 @@ let midiAccess = null, midiOutput = null, parsedMidi = null, allNotes = [];
 let playing = false, startAcTime = 0, startOffset = 0, nextIdx = 0, audioCtx = null;
 let assignment = { 0: null, 1: null, 9: null };
 
-// Start MIDI
+// --- MIDI INIT ---
 async function initMidi() {
   if (!navigator.requestMIDIAccess) {
-    setStatus('deviceStatus', 'Web MIDI niet ondersteund.', 'err');
+    setStatus('deviceStatus', 'Browser ondersteunt geen MIDI.', 'err');
     return;
   }
   try {
     midiAccess = await navigator.requestMIDIAccess();
-    midiAccess.onstatechange = populateDevices;
     populateDevices();
-    setStatus('deviceStatus', 'MIDI gereed.', 'ok');
+    setStatus('deviceStatus', 'MIDI Verbonden.', 'ok');
   } catch (e) {
     setStatus('deviceStatus', 'Toegang geweigerd.', 'err');
   }
@@ -118,63 +100,76 @@ async function initMidi() {
 
 function populateDevices() {
   const sel = document.getElementById('deviceSel');
-  const prev = sel.value;
-  sel.innerHTML = '<option value="">-- Selecteer MIDI uitgang --</option>';
+  sel.innerHTML = '<option value="">-- Kies Uitgang --</option>';
   midiAccess.outputs.forEach(port => {
     const o = document.createElement('option');
     o.value = port.id; o.textContent = port.name;
-    if (port.id === prev) o.selected = true;
     sel.appendChild(o);
   });
 }
-
-function refreshDevices() { populateDevices(); }
 
 function onDeviceChange() {
   midiOutput = midiAccess.outputs.get(document.getElementById('deviceSel').value);
   updatePlayBtn();
 }
 
-// Bestand laden met robuuste Midi check
+// --- BESTAND LADEN EN ANALYSE ---
 document.getElementById('fileInput').onchange = async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // FIX: Controleer of de library geladen is
-  if (typeof Midi === 'undefined') {
-    setStatus('fileStatus', 'Fout: MIDI library niet geladen. Vernieuw de pagina.', 'err');
-    return;
-  }
-
   try {
     const buf = await file.arrayBuffer();
-    
-    // FIX: Probeer beide constructor varianten
-    if (typeof Midi.Midi === 'function') {
-      parsedMidi = new Midi.Midi(buf);
-    } else {
-      parsedMidi = new Midi(buf);
-    }
+    // Gebruik de juiste constructor van de bibliotheek
+    const Constructor = typeof Midi !== 'undefined' ? (Midi.Midi || Midi) : (window.Midi ? (window.Midi.Midi || window.Midi) : null);
+    if (!Constructor) throw new Error("MIDI Library niet gevonden");
 
-    document.getElementById('dzText').textContent = file.name;
+    parsedMidi = new Constructor(buf);
+    
+    // Analyseer alle tracks
+    const analyzedTracks = parsedMidi.tracks.map((t, i) => {
+      const name = (t.name || '').toLowerCase();
+      let type = '';
+      let score = 0;
+
+      // Drum detectie (naam of kanaal 10)
+      if (t.channel === 9 || name.includes('drum') || name.includes('kit') || name.includes('perc')) {
+        type = 'drums'; score = 10;
+      } 
+      // Bass detectie (naam of instrument familie)
+      else if (name.includes('bass') || name.includes('bas') || (t.instrument && t.instrument.family === 'bass')) {
+        type = 'bass'; score = 10;
+      }
+
+      return { index: i, name: t.name || `Track ${i+1}`, type, score, notes: t.notes.length };
+    });
+
+    // Auto-assign op basis van analyse
+    assignment = { 0: null, 1: null, 9: null };
+    const drums = analyzedTracks.find(t => t.type === 'drums' && t.notes > 0);
+    const bass = analyzedTracks.find(t => t.type === 'bass' && t.notes > 0);
+
+    if (drums) assignment[9] = drums.index;
+    if (bass) assignment[0] = bass.index;
+
+    // Update UI
     document.getElementById('tracksCard').classList.remove('hidden');
     document.getElementById('transportCard').classList.remove('hidden');
     
-    buildTrackOptions();
-    setStatus('fileStatus', 'Bestand geladen.', 'ok');
+    const opts = analyzedTracks.map(t => `<option value="${t.index}">${t.name} (${t.notes} noten)</option>`).join('');
+    ['selCh10', 'selCh2', 'selCh1'].forEach(id => {
+      const select = document.getElementById(id);
+      select.innerHTML = '<option value="">-- Geen --</option>' + opts;
+      const ch = id === 'selCh10' ? 9 : (id === 'selCh2' ? 1 : 0);
+      if (assignment[ch] !== null) select.value = assignment[ch];
+    });
+
+    buildAllNotes();
+    setStatus('fileStatus', `Geladen: ${file.name}`, 'ok');
   } catch (err) {
-    setStatus('fileStatus', 'Fout bij verwerken: ' + err.message, 'err');
+    setStatus('fileStatus', 'Fout: ' + err.message, 'err');
   }
 };
-
-function buildTrackOptions() {
-  const opts = parsedMidi.tracks.map((t, i) => 
-    `<option value="${i}">${t.name || 'Track '+i} (${t.notes.length} noten)</option>`
-  ).join('');
-  ['selCh10', 'selCh2', 'selCh1'].forEach(id => {
-    document.getElementById(id).innerHTML = '<option value="">-- Geen --</option>' + opts;
-  });
-}
 
 function assignTrack(ch, val) {
   assignment[ch] = val === "" ? null : parseInt(val);
@@ -195,56 +190,67 @@ function buildAllNotes() {
   allNotes.sort((a, b) => a.time - b.time);
 }
 
+// --- TRANSPORT ---
 function togglePlay() {
   if (playing) {
     playing = false;
-    document.getElementById('playBtn').textContent = '▶ Play';
+    document.getElementById('playBtn').textContent = '▶ PLAY';
   } else {
-    // FIX: AudioContext herstarten voor iPad
     if (!audioCtx) audioCtx = new AudioContext();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    
     playing = true;
     startAcTime = audioCtx.currentTime;
-    document.getElementById('playBtn').textContent = '⏸ Pause';
+    document.getElementById('playBtn').textContent = '⏸ PAUSE';
     tick();
   }
 }
 
 function tick() {
   if (!playing || !midiOutput) return;
-  const now = (audioCtx.currentTime - startAcTime) + startOffset;
+  const t = parseFloat(document.getElementById('tempoSlider').value) / 100;
+  const now = (audioCtx.currentTime - startAcTime) * t + startOffset;
   
-  while (nextIdx < allNotes.length && allNotes[nextIdx].time <= now) {
+  while(nextIdx < allNotes.length && allNotes[nextIdx].time <= now) {
     const n = allNotes[nextIdx];
-    midiOutput.send([n.on ? (0x90 | n.ch) : (0x80 | n.ch), n.pitch, n.vel]);
+    midiOutput.send([n.on ? (0x90|n.ch) : (0x80|n.ch), n.pitch, n.vel]);
     nextIdx++;
   }
-
-  const progress = (now / parsedMidi.duration) * 100;
-  document.getElementById('progFill').style.width = Math.min(progress, 100) + '%';
-  document.getElementById('timeLabel').textContent = fmt(now) + ' / ' + fmt(parsedMidi.duration);
   
+  const pct = (now / parsedMidi.duration) * 100;
+  document.getElementById('progFill').style.width = Math.min(pct, 100) + '%';
+  document.getElementById('timeLabel').textContent = `${fmt(now)} / ${fmt(parsedMidi.duration)}`;
+
   if (nextIdx < allNotes.length) requestAnimationFrame(tick);
   else stopAll();
 }
 
 function stopAll() {
   playing = false; nextIdx = 0; startOffset = 0;
-  document.getElementById('playBtn').textContent = '▶ Play';
+  document.getElementById('playBtn').textContent = '▶ PLAY';
   document.getElementById('progFill').style.width = '0%';
   if (midiOutput) { for(let i=0; i<16; i++) midiOutput.send([0xB0|i, 123, 0]); }
 }
 
+function seek(e) {
+  if (!parsedMidi) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  startOffset = pct * parsedMidi.duration;
+  nextIdx = allNotes.findIndex(n => n.time >= startOffset);
+  if (!playing) {
+    document.getElementById('progFill').style.width = (pct * 100) + '%';
+    document.getElementById('timeLabel').textContent = `${fmt(startOffset)} / ${fmt(parsedMidi.duration)}`;
+  } else {
+    startAcTime = audioCtx.currentTime;
+  }
+}
+
 function fmt(s) {
-  const m = Math.floor(s/60);
-  const sec = Math.floor(s%60);
+  const m = Math.floor(s/60); const sec = Math.floor(s%60);
   return m + ":" + (sec < 10 ? "0" : "") + sec;
 }
 
 function updatePlayBtn() {
-  const hasAssign = assignment[0] !== null || assignment[1] !== null || assignment[9] !== null;
-  document.getElementById('playBtn').disabled = !(parsedMidi && midiOutput && hasAssign);
+  document.getElementById('playBtn').disabled = !(midiOutput && parsedMidi);
 }
 
 function setStatus(id, msg, type) {
