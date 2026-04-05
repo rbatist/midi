@@ -463,7 +463,7 @@
 <script>
 // ── State ─────────────────────────────────────────────────────────
 // ── Mode detection ────────────────────────────────────────────────
-const USE_SERVER = location.protocol !== 'file:';
+let USE_SERVER = location.protocol !== 'file:';
 
 // Web MIDI (desktop file:// mode)
 let midiAccess   = null;
@@ -538,18 +538,25 @@ function initMidi() {
       });
       socket.on('output-err', msg => setStatus('deviceStatus', msg, 'err'));
     };
-    s.onerror = () => setStatus('deviceStatus', 'Kan server niet bereiken.', 'err');
+    s.onerror = () => {
+      USE_SERVER = false;
+      initWebMidi();
+    };
     document.head.appendChild(s);
   } else {
-    navigator.requestMIDIAccess?.({ sysex: true })
-      .then(access => {
-        midiAccess = access;
-        midiAccess.onstatechange = populateDevices;
-        populateDevices();
-        setStatus('deviceStatus', 'Web MIDI actief.', 'ok');
-      })
-      .catch(e => setStatus('deviceStatus', 'Web MIDI niet beschikbaar: ' + e.message, 'err'));
+    initWebMidi();
   }
+}
+
+function initWebMidi() {
+  navigator.requestMIDIAccess?.({ sysex: true })
+    .then(access => {
+      midiAccess = access;
+      midiAccess.onstatechange = populateDevices;
+      populateDevices();
+      setStatus('deviceStatus', 'Web MIDI actief.', 'ok');
+    })
+    .catch(e => setStatus('deviceStatus', 'Web MIDI niet beschikbaar: ' + e.message, 'err'));
 }
 
 function populateDevices() {
