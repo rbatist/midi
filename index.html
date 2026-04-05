@@ -1103,15 +1103,35 @@ function buildAllNotes() {
     }
   }
 
-  // Bass (ch 0) — multiple tracks all go to channel 0
+  // Bass (ch 0) — multiple tracks merged, reference-counted per pitch
+  // so a note-off from track A doesn't kill a still-playing note from track B
+  const bassEvents = [];
   for (const trackIdx of bassAssignment) {
     if (trackIdx === null) continue;
     const track = parsedMidi.tracks[trackIdx];
     if (!track) continue;
     for (const n of track.notes) {
       const pitch = shiftPitch(n.midi, 0);
-      allNotes.push({ time: n.time,              pitch, vel: Math.round(n.velocity * 127), ch: 0, on: true  });
-      allNotes.push({ time: n.time + n.duration, pitch, vel: 0,                            ch: 0, on: false });
+      bassEvents.push({ time: n.time,              pitch, vel: Math.round(n.velocity * 127), on: true  });
+      bassEvents.push({ time: n.time + n.duration, pitch, vel: 0,                            on: false });
+    }
+  }
+  // Sort: note-offs before note-ons at same time so ref-count logic is correct
+  bassEvents.sort((a, b) => a.time - b.time || (a.on ? 1 : -1));
+
+  // Walk events, keep per-pitch active count; only send note-off when count hits 0
+  const activeCount = {}; // pitch → number of active note-ons
+  for (const ev of bassEvents) {
+    const p = ev.pitch;
+    if (ev.on) {
+      activeCount[p] = (activeCount[p] || 0) + 1;
+      allNotes.push({ time: ev.time, pitch: p, vel: ev.vel, ch: 0, on: true });
+    } else {
+      activeCount[p] = Math.max(0, (activeCount[p] || 0) - 1);
+      if (activeCount[p] === 0) {
+        allNotes.push({ time: ev.time, pitch: p, vel: 0, ch: 0, on: false });
+      }
+      // else: another track still holds this pitch — suppress the note-off
     }
   }
 
