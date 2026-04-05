@@ -462,8 +462,17 @@
 
 <script>
 // ── State ─────────────────────────────────────────────────────────
-let midiAccess  = null;
-let midiOutput  = null;
+// ── Mode detection ────────────────────────────────────────────────
+let USE_SERVER = location.protocol !== 'file:';
+
+// Web MIDI (desktop file:// mode)
+let midiAccess   = null;
+let midiOutput   = null;
+
+// Server mode (Socket.IO bridge)
+let socket        = null;
+let selectedOutput = null; // chosen output name (server mode)
+let pendingMidi   = [];    // setTimeout IDs waiting to fire
 let audioCtx    = null;
 let parsedMidi  = null;
 let allNotes    = [];
@@ -490,18 +499,57 @@ function toggleGuide() {
 }
 
 // ── MIDI Setup ────────────────────────────────────────────────────
+function midiReady() {
+  return USE_SERVER ? !!selectedOutput : !!midiOutput;
+}
+
 function midiSend(msg, delayMs = 0) {
-  if (!midiOutput) return;
-  const ts = performance.now() + Math.max(0, delayMs);
-  midiOutput.send(msg, ts);
+  const ms = Math.max(0, delayMs);
+  if (USE_SERVER) {
+    if (!socket) return;
+    if (ms < 3) {
+      socket.emit('midi', msg);
+    } else {
+      const id = setTimeout(() => socket.emit('midi', msg), ms);
+      pendingMidi.push(id);
+    }
+  } else if (midiOutput) {
+    midiOutput.send(msg, Math.max(performance.now() + ms, performance.now()));
+  }
 }
 
 function initMidi() {
-  if (!navigator.requestMIDIAccess) {
-    setStatus('deviceStatus', 'Web MIDI niet ondersteund door deze browser.', 'err');
-    return;
+  if (USE_SERVER) {
+    // Dynamically load socket.io from server then connect
+    const s = document.createElement('script');
+    s.src = '/socket.io/socket.io.js';
+    s.onload = () => {
+      socket = io();
+      socket.on('connect', () => setStatus('deviceStatus', 'Server verbonden.', 'ok'));
+      socket.on('disconnect', () => {
+        setStatus('deviceStatus', 'Serververbinding verloren.', 'err');
+        selectedOutput = null; updatePlayBtn();
+      });
+      socket.on('midi-outputs', list => populateDeviceList(list));
+      socket.on('output-ready', name => {
+        selectedOutput = name;
+        setStatus('deviceStatus', `Verbonden: ${name}`, 'ok');
+        updatePlayBtn();
+      });
+      socket.on('output-err', msg => setStatus('deviceStatus', msg, 'err'));
+    };
+    s.onerror = () => {
+      USE_SERVER = false;
+      initWebMidi();
+    };
+    document.head.appendChild(s);
+  } else {
+    initWebMidi();
   }
-  navigator.requestMIDIAccess()
+}
+
+function initWebMidi() {
+  navigator.requestMIDIAccess?.({ sysex: true })
     .then(access => {
       midiAccess = access;
       midiAccess.onstatechange = populateDevices;
@@ -525,13 +573,30 @@ function populateDevices() {
   if (!prev && midiAccess.outputs.size === 1) { sel.selectedIndex = 1; onDeviceChange(); }
 }
 
-function refreshDevices() { populateDevices(); }
+function populateDeviceList(names) {
+  const sel  = document.getElementById('deviceSel');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">-- Selecteer MIDI apparaat --</option>' +
+    names.map(n => `<option value="${n}"${n === prev ? ' selected' : ''}>${n}</option>`).join('');
+  if (!prev && names.length === 1) { sel.selectedIndex = 1; onDeviceChange(); }
+}
+
+function refreshDevices() {
+  if (USE_SERVER) socket?.emit('get-outputs');
+  else populateDevices();
+}
 
 function onDeviceChange() {
   const val = document.getElementById('deviceSel').value;
-  midiOutput = val ? midiAccess?.outputs.get(val) : null;
-  setStatus('deviceStatus', midiOutput ? `Verbonden: ${midiOutput.name}` : '', midiOutput ? 'ok' : '');
-  updatePlayBtn();
+  if (USE_SERVER) {
+    selectedOutput = null;
+    if (val) socket?.emit('open-output', val);
+    else { setStatus('deviceStatus', '', ''); updatePlayBtn(); }
+  } else {
+    midiOutput = val ? midiAccess?.outputs.get(val) : null;
+    setStatus('deviceStatus', midiOutput ? `Verbonden: ${midiOutput.name}` : '', midiOutput ? 'ok' : '');
+    updatePlayBtn();
+  }
 }
 
 // ── File Loading ──────────────────────────────────────────────────
@@ -941,7 +1006,7 @@ function songPos() {
 function togglePlay() { if (playing) pause(); else play(); }
 
 function play() {
-  if (!parsedMidi || !midiOutput) return;
+  if (!parsedMidi || !midiReady()) return;
   if (!audioCtx) audioCtx = new AudioContext();
 
   nextIdx = allNotes.findIndex(n => n.time >= startOffset - 0.01);
@@ -953,7 +1018,7 @@ function play() {
   document.getElementById('stopBtn').disabled = false;
   schedTimer = setInterval(scheduler, SCHED_MS);
   rafId = requestAnimationFrame(updateUI);
-  setStatus('transportStatus', `Speelt via ${midiOutput.name}…`, 'ok');
+  setStatus('transportStatus', `Speelt via ${selectedOutput ?? midiOutput?.name}…`, 'ok');
 }
 
 function pause() {
@@ -981,15 +1046,21 @@ function stopAll() {
 }
 
 function allNotesOff() {
-  if (!midiOutput) return;
-  for (let ch = 0; ch < 16; ch++) {
-    midiOutput.send([0xB0 | ch, 123, 0]);
-    midiOutput.send([0xB0 | ch, 121, 0]);
+  // Cancel any pending scheduled MIDI (server mode)
+  pendingMidi.forEach(clearTimeout);
+  pendingMidi = [];
+  if (USE_SERVER) {
+    socket?.emit('all-off');
+  } else if (midiOutput) {
+    for (let ch = 0; ch < 16; ch++) {
+      midiOutput.send([0xB0 | ch, 123, 0]);
+      midiOutput.send([0xB0 | ch, 121, 0]);
+    }
   }
 }
 
 function scheduler() {
-  if (!audioCtx || !midiOutput || !playing) return;
+  if (!audioCtx || !midiReady() || !playing) return;
   const now = audioCtx.currentTime;
   const t   = tempo();
   const schedUntil = now + LOOKAHEAD;
@@ -1048,7 +1119,7 @@ function setStatus(id, msg, type) {
 
 function updatePlayBtn() {
   const hasTrack = assignment[0] !== null || assignment[1] !== null || assignment[9] !== null;
-  document.getElementById('playBtn').disabled = !(parsedMidi && midiOutput && hasTrack);
+  document.getElementById('playBtn').disabled = !(parsedMidi && midiReady() && hasTrack);
 }
 
 // ── Init ──────────────────────────────────────────────────────────
