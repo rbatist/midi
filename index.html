@@ -157,32 +157,70 @@
     .ch-pill.drums { background: #1e1033; color: #a78bfa; border: 1px solid #a78bfa40; }
     .ch-row select { flex: 1; min-width: 0; }
 
-    /* Multi-track bass */
-    .bass-block { display: flex; flex-direction: column; gap: 0; }
+    /* Multi-track bass accordion */
+    .bass-accordion {
+      border-bottom: 1px solid var(--border);
+    }
+    .bass-accordion:last-child { border-bottom: none; }
+
+    .bass-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      cursor: pointer;
+      user-select: none;
+    }
+    .bass-header:hover .bass-arrow { color: #34d399; }
+
+    .bass-arrow {
+      font-size: 0.65rem;
+      color: var(--dim);
+      transition: transform 0.18s;
+      flex-shrink: 0;
+      width: 12px;
+    }
+    .bass-arrow.open { transform: rotate(90deg); }
+
+    .bass-summary {
+      flex: 1;
+      font-size: 0.82rem;
+      color: var(--dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bass-summary em { color: var(--text); font-style: normal; }
+
+    .bass-body {
+      display: none;
+      flex-direction: column;
+      gap: 0;
+      padding-bottom: 6px;
+    }
+    .bass-body.open { display: flex; }
+
     .bass-track-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 6px 0;
-      border-bottom: 1px solid var(--border);
+      padding: 5px 0 5px 22px;
+      border-top: 1px solid var(--border);
     }
-    .bass-track-row:last-child { border-bottom: none; }
     .bass-track-row select { flex: 1; min-width: 0; }
-    .bass-label {
-      font-size: 0.68rem;
+
+    .bass-sub-label {
+      font-size: 0.63rem;
       font-weight: 700;
-      padding: 3px 10px;
+      padding: 3px 8px;
       border-radius: 20px;
       white-space: nowrap;
       flex-shrink: 0;
-      width: 120px;
+      width: 80px;
       text-align: center;
-      background: #0f293a; color: #34d399; border: 1px solid #34d39940;
-    }
-    .bass-label.secondary {
       background: #0a2030; color: #2ab87a; border: 1px solid #2ab87a30;
-      font-size: 0.63rem;
     }
+
     button.remove-bass {
       width: 26px; height: 26px;
       padding: 0;
@@ -194,11 +232,13 @@
       flex-shrink: 0;
     }
     button.remove-bass:hover:not(:disabled) { background: #3a1515; }
+
     .add-bass-row {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 0 2px;
+      padding: 6px 0 2px 22px;
+      border-top: 1px solid var(--border);
     }
     button.add-bass {
       font-size: 0.78rem;
@@ -466,25 +506,32 @@
       <button class="preview" id="prevStop1" onclick="stopPreview()" title="Stop" disabled>■</button>
     </div>
   </div>
-  <!-- Multi-track bass block -->
-  <div class="bass-block" id="bassBlock">
-    <!-- rows injected by JS -->
-  </div>
-  <div class="add-bass-row">
-    <button class="add-bass" onclick="addBassTrack()">＋ Extra bass track</button>
-    <div class="octave-group" style="margin-left:auto;">
-      <label>Oct:</label>
-      <select class="octave-sel" id="bassOctaveSel" onchange="setBassOctave(+this.value)">
-        <option value="-2">-2</option>
-        <option value="-1">-1</option>
-        <option value="0" selected>0</option>
-        <option value="1">+1</option>
-        <option value="2">+2</option>
-      </select>
+  <!-- Multi-track bass accordion -->
+  <div class="bass-accordion" id="bassAccordion">
+    <div class="bass-header" onclick="toggleBassAccordion()">
+      <span class="ch-pill bass" style="width:120px;flex-shrink:0;">BASS — Ch 1</span>
+      <span class="bass-arrow" id="bassArrow">▶</span>
+      <span class="bass-summary" id="bassSummary">— Geen —</span>
+      <div class="prev-btns" style="flex-shrink:0;" onclick="event.stopPropagation()">
+        <button class="preview" id="prevPlay0" onclick="startPreview(0)" title="Preview alle bass tracks">▶</button>
+        <button class="preview" id="prevStop0" onclick="stopPreview()" title="Stop" disabled>■</button>
+      </div>
+      <div class="octave-group" style="flex-shrink:0;" onclick="event.stopPropagation()">
+        <label>Oct:</label>
+        <select class="octave-sel" id="bassOctaveSel" onchange="setBassOctave(+this.value)">
+          <option value="-2">-2</option>
+          <option value="-1">-1</option>
+          <option value="0" selected>0</option>
+          <option value="1">+1</option>
+          <option value="2">+2</option>
+        </select>
+      </div>
     </div>
-    <div class="prev-btns" style="margin-left:8px;">
-      <button class="preview" id="prevPlay0" onclick="startPreview(0)" title="Preview alle bass tracks">▶</button>
-      <button class="preview" id="prevStop0" onclick="stopPreview()" title="Stop" disabled>■</button>
+    <div class="bass-body" id="bassBody">
+      <!-- sub-rows injected by JS -->
+      <div class="add-bass-row">
+        <button class="add-bass" onclick="addBassTrack()">＋ Extra bass track</button>
+      </div>
     </div>
   </div>
 </div>
@@ -510,6 +557,10 @@
     <div class="time" id="timeLabel">0:00 / 0:00</div>
   </div>
   <div class="status" id="transportStatus"></div>
+  <div id="pcDisplay" style="font-size:0.76rem;color:var(--dim);margin-top:6px;display:flex;gap:20px;flex-wrap:wrap;">
+    <span>Drums: <span id="pcDrums" style="color:var(--text)">default</span></span>
+    <span>Bass: <span id="pcBass" style="color:var(--text)">default</span></span>
+  </div>
 </div>
 
 </div><!-- /.scroll-area -->
@@ -698,6 +749,85 @@ function analyzeTrack(track) {
 
 const CH_IDS = { 9: 'selCh10', 1: 'selCh2' };
 
+// GM bass program names (1-indexed as displayed, stored 0-indexed internally)
+const GM_BASS_NAMES = {
+  32: 'Acoustic Bass',
+  33: 'Electric Bass (finger)',
+  34: 'Electric Bass (pick)',
+  35: 'Fretless Bass',
+  36: 'Slap Bass 1',
+  37: 'Slap Bass 2',
+  38: 'Synth Bass 1',
+  39: 'Synth Bass 2',
+};
+
+// SR-18 program change mapping: GM instrNum (0-indexed) → SR-18 voice number
+const SR18_BASS_PC = {
+  32: 12,  // Acoustic Bass   → 012 Upright
+  33:  0,  // Finger Bass     → 000 ElecBas1
+  34:  2,  // Picked Bass     → 002 PickBas1
+  35: 15,  // Fretless Bass   → 015 Fretless
+  36:  8,  // Slap Bass 1     → 008 Slap1
+  37: 10,  // Slap Bass 2     → 010 Slap3
+  38: 42,  // Synth Bass 1    → 042 Synbass2
+  39: 44,  // Synth Bass 2    → 044 AndMoge1
+};
+
+// SR-18 drum kit matching: keywords in track naam → program change
+const SR18_DRUM_KITS = [
+  { pc: 17, name: 'TAMA Artstar II',      keywords: ['tama', 'artstar'] },
+  { pc:  2, name: 'Ludwig Classic Maple', keywords: ['ludwig'] },
+  { pc:  1, name: 'Pearl Export',         keywords: ['pearl'] },
+  { pc: 33, name: 'Gretsch USA Custom',   keywords: ['gretsch', 'grestch'] },
+  { pc:  9, name: 'DW Collector\'s',      keywords: ['collector', ' dw ', '|dw|', 'dw|'] },
+  { pc: 10, name: 'Yamaha Recording',     keywords: ['yamaha'] },
+  { pc: 18, name: 'Sonor SQ2',            keywords: ['sonor'] },
+  { pc: 20, name: 'Mapex Saturn',         keywords: ['mapex', 'saturn'] },
+  { pc: 11, name: 'Premier Signia',       keywords: ['premier', 'signia'] },
+  { pc: 26, name: 'Roland TR-808/909',    keywords: ['roland', '808', '909', 'tr-'] },
+];
+
+function matchDrumKit(trackName) {
+  const lower = (trackName || '').toLowerCase();
+  for (const kit of SR18_DRUM_KITS) {
+    if (kit.keywords.some(kw => lower.includes(kw))) return kit;
+  }
+  return null;
+}
+
+function sendDrumProgChange() {
+  const idx = assignment[9];
+  const track = (idx != null) ? parsedMidi?.tracks[idx] : null;
+  const kit = track ? matchDrumKit(track.name) : null;
+  if (kit && midiOutput) midiOutput.send([0xC9, kit.pc]); // Ch 10 (0-indexed: 9)
+  updatePCDisplay();
+}
+
+function sendBassProgChange() {
+  const firstIdx = bassAssignment.find(idx => idx !== null);
+  const track = (firstIdx != null) ? _cachedTracks.find(t => t.i === firstIdx) : null;
+  const pc = track ? SR18_BASS_PC[track.instrNum] : null;
+  if (pc != null && midiOutput) midiOutput.send([0xC0, pc]); // Ch 1 (0-indexed: 0)
+  updatePCDisplay();
+}
+
+function updatePCDisplay() {
+  // Drums
+  const dIdx = assignment[9];
+  const dTrack = (dIdx != null) ? parsedMidi?.tracks[dIdx] : null;
+  const kit = dTrack ? matchDrumKit(dTrack.name) : null;
+  document.getElementById('pcDrums').textContent =
+    kit ? `PC ${kit.pc} — ${kit.name}` : 'default';
+
+  // Bass
+  const bIdx = bassAssignment.find(i => i !== null);
+  const bTrack = (bIdx != null) ? _cachedTracks.find(t => t.i === bIdx) : null;
+  const bPc   = bTrack ? SR18_BASS_PC[bTrack.instrNum] : null;
+  const bName = bTrack ? GM_BASS_NAMES[bTrack.instrNum] : null;
+  document.getElementById('pcBass').textContent =
+    bPc != null ? `PC ${String(bPc).padStart(3, '0')} — ${bName || ''}` : 'default';
+}
+
 function buildTrackList() {
   assignment = { 1: null, 9: null };
   bassAssignment = [];
@@ -706,6 +836,7 @@ function buildTrackList() {
     .map((t, i) => {
       if (!t.notes.length) return null;
       const analysis = analyzeTrack(t);
+      const instrNum = t.instrument?.number ?? -1;
       return {
         i,
         name: t.name || `Track ${i + 1}`,
@@ -714,11 +845,12 @@ function buildTrackList() {
         score: analysis.score,
         reasons: analysis.reasons,
         median: analysis.median,
+        instrNum,  // 0-indexed GM program number
       };
     })
     .filter(Boolean);
 
-  // Auto-assign highest-scoring track per type, no duplicates
+  // Auto-assign drums and perc
   const used = new Set();
   for (const [type, ch] of [['drums', 9], ['perc', 1]]) {
     const candidates = tracks
@@ -727,19 +859,45 @@ function buildTrackList() {
     if (candidates.length) { assignment[ch] = candidates[0].i; used.add(candidates[0].i); }
   }
 
-  // Bass: auto-assign top 3 best-scoring bass tracks
-  const bassCandidates = tracks
-    .filter(t => t.type === 'bass' && !used.has(t.i))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
-  if (bassCandidates.length) {
-    bassCandidates.forEach(t => { bassAssignment.push(t.i); used.add(t.i); });
-  } else {
-    bassAssignment = [null]; // at least one empty slot
+  // Group bass tracks by GM program number
+  // Tracks detected only by name (no GM program) go to group -1 (unknown)
+  const bassTracks = tracks.filter(t => t.type === 'bass' && !used.has(t.i));
+
+  const groups = {};
+  for (const t of bassTracks) {
+    const key = GM_BASS_PROGRAMS.has(t.instrNum) ? t.instrNum : -1;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
   }
 
+  // Sort groups: GM groups first (key !== -1), then by total note count
+  const sortedGroups = Object.entries(groups)
+    .sort((a, b) => {
+      const aIsGM = parseInt(a[0]) !== -1 ? 1 : 0;
+      const bIsGM = parseInt(b[0]) !== -1 ? 1 : 0;
+      if (bIsGM !== aIsGM) return bIsGM - aIsGM; // GM groups first
+      const totalA = a[1].reduce((s, t) => s + t.notes, 0);
+      const totalB = b[1].reduce((s, t) => s + t.notes, 0);
+      return totalB - totalA;
+    });
+
+  // Auto-select: pick the best group (GM preferred), top 3 by note count
+  // Alleen tracks met een GM-match (niet puur naam-gebaseerd) worden initieel geselecteerd
+  if (sortedGroups.length > 0) {
+    const [, bestTracks] = sortedGroups[0];
+    bestTracks
+      .sort((a, b) => b.notes - a.notes)
+      .filter(t => !(t.reasons.length === 1 && t.reasons[0] === 'naam'))
+      .slice(0, 3)
+      .forEach(t => { bassAssignment.push(t.i); used.add(t.i); });
+  }
+
+  if (bassAssignment.length === 0) bassAssignment = [null];
+
   populateAssignSelects(tracks);
-  renderBassRows(tracks);
+  renderBassRows(tracks, groups, sortedGroups); // stelt _cachedTracks in
+  sendDrumProgChange();
+  sendBassProgChange();
   document.getElementById('tracksCard').classList.remove('hidden');
 }
 
@@ -756,40 +914,114 @@ function populateAssignSelects(tracks) {
   document.getElementById('selCh2').innerHTML  = makeOpts(assignment[1]);
 }
 
-// Cached track list for re-rendering bass rows
-let _cachedTracks = [];
+let _cachedTracks  = [];
+let _cachedGroups  = {};      // instrNum → [trackObj]
+let _sortedGroups  = [];      // [[instrNum, [trackObj]], ...]
 
-function renderBassRows(tracks) {
-  if (tracks !== undefined) _cachedTracks = tracks;
-  const block = document.getElementById('bassBlock');
-  block.innerHTML = '';
+function gmProgLabel(instrNum) {
+  const n = parseInt(instrNum);
+  if (GM_BASS_NAMES[n]) return `GM ${n + 1}: ${GM_BASS_NAMES[n]}`;
+  if (n === -1) return 'Bass (onbekend GM prog)';
+  return `GM prog ${n + 1}`;
+}
 
+let bassAccordionOpen = false;
+
+function toggleBassAccordion() {
+  bassAccordionOpen = !bassAccordionOpen;
+  document.getElementById('bassBody').classList.toggle('open', bassAccordionOpen);
+  document.getElementById('bassArrow').classList.toggle('open', bassAccordionOpen);
+}
+
+function updateBassSummary() {
+  const count = bassAssignment.filter(idx => idx !== null).length;
+  const el = document.getElementById('bassSummary');
+  if (!count) { el.innerHTML = '— Geen —'; return; }
+
+  // Find GM program of first assigned track
+  const firstIdx = bassAssignment.find(idx => idx !== null);
+  const firstTrack = _cachedTracks.find(t => t.i === firstIdx);
+  const instrNum = firstTrack?.instrNum ?? -1;
+  const gmName = GM_BASS_NAMES[instrNum];
+
+  const gmLabel = gmName
+    ? `<em style="color:var(--green);font-style:normal;">${gmName}</em> · `
+    : '';
+  el.innerHTML = `${gmLabel}<em>${count} track${count !== 1 ? 's' : ''}</em>`;
+}
+
+function renderBassRows(tracks, groups, sortedGroups) {
+  if (tracks       !== undefined) _cachedTracks  = tracks;
+  if (groups       !== undefined) _cachedGroups  = groups;
+  if (sortedGroups !== undefined) _sortedGroups  = sortedGroups;
+
+  const body   = document.getElementById('bassBody');
+  const addRow = body.querySelector('.add-bass-row');
+  body.querySelectorAll('.bass-track-row, .bass-group-header').forEach(r => r.remove());
+
+  // ── Group switcher (only GM groups, hide unknown -1) ──
+  const gmGroups = _sortedGroups.filter(([key]) => parseInt(key) !== -1);
+  if (gmGroups.length > 1) {
+    const header = document.createElement('div');
+    header.className = 'bass-group-header';
+    header.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0 8px 22px;border-top:1px solid var(--border);flex-wrap:wrap;';
+    header.innerHTML = `<span style="font-size:0.72rem;color:var(--dim);white-space:nowrap;">GM groep:</span>` +
+      gmGroups.map(([key, grpTracks]) => {
+        const totalNotes = grpTracks.reduce((s, t) => s + t.notes, 0);
+        const isActive   = grpTracks.some(t => bassAssignment.includes(t.i));
+        return `<button onclick="switchBassGroup(${key})"
+          style="font-size:0.72rem;padding:3px 10px;border-radius:14px;
+          ${isActive ? 'background:var(--accent);border-color:var(--accent2);color:#fff;font-weight:700;' : ''}">
+          ${gmProgLabel(key)} <span style="opacity:0.7">(${totalNotes} noten)</span>
+        </button>`;
+      }).join('');
+    body.insertBefore(header, addRow);
+  } else if (gmGroups.length === 1) {
+    const [key] = gmGroups[0];
+    const info = document.createElement('div');
+    info.className = 'bass-group-header';
+    info.style.cssText = 'font-size:0.72rem;color:var(--dim);padding:4px 0 6px 22px;border-top:1px solid var(--border);';
+    info.textContent = `GM instrument: ${gmProgLabel(key)}`;
+    body.insertBefore(info, addRow);
+  }
+
+  // ── One row per bassAssignment slot ──
   bassAssignment.forEach((trackIdx, rowIdx) => {
-    const isFirst = rowIdx === 0;
-    const label = isFirst
-      ? `<span class="bass-label">BASS — Ch 1</span>`
-      : `<span class="bass-label secondary">BASS — Ch 1 #${rowIdx + 1}</span>`;
-
     const opts = '<option value="">— Geen —</option>' +
       _cachedTracks.map(t => {
         const tag  = t.type ? ` [${t.type}]` : '';
-        const hint = t.reasons.length ? ` · ${t.reasons.slice(0,2).join(', ')}` : (t.median != null ? ` · mediaan ${noteName(t.median)}` : '');
+        const hint = t.reasons.length
+          ? ` · ${t.reasons.slice(0, 2).join(', ')}`
+          : (t.median != null ? ` · mediaan ${noteName(t.median)}` : '');
         return `<option value="${t.i}"${t.i === trackIdx ? ' selected' : ''}>${t.name}${tag} (${t.notes} noten${hint})</option>`;
       }).join('');
 
-    const removeBtn = !isFirst
-      ? `<button class="remove-bass" onclick="removeBassTrack(${rowIdx})" title="Verwijder deze bass track">✕</button>`
-      : `<button class="remove-bass" onclick="removeBassTrack(${rowIdx})" title="Verwijder deze bass track" ${bassAssignment.length <= 1 ? 'disabled' : ''}>✕</button>`;
-
+    const removeDisabled = bassAssignment.length <= 1 ? ' disabled' : '';
     const row = document.createElement('div');
     row.className = 'bass-track-row';
     row.innerHTML = `
-      ${label}
+      <span class="bass-sub-label">#${rowIdx + 1}</span>
       <select onchange="assignBassTrack(${rowIdx}, this.value)">${opts}</select>
-      ${removeBtn}
-    `;
-    block.appendChild(row);
+      <button class="remove-bass" onclick="removeBassTrack(${rowIdx})" title="Verwijder rij"${removeDisabled}>✕</button>`;
+    body.insertBefore(row, addRow);
   });
+
+  updateBassSummary();
+}
+
+// Switch all bass rows to tracks from a different GM program group
+function switchBassGroup(instrNum) {
+  const key    = parseInt(instrNum);
+  const grpTracks = _cachedGroups[key] || _cachedGroups[-1] || [];
+  bassAssignment = grpTracks
+    .sort((a, b) => b.notes - a.notes)
+    .slice(0, 3)
+    .map(t => t.i);
+  if (bassAssignment.length === 0) bassAssignment = [null];
+  sendBassProgChange();
+  renderBassRows();
+  buildAllNotes();
+  updatePlayBtn();
 }
 
 function addBassTrack() {
@@ -809,6 +1041,8 @@ function removeBassTrack(rowIdx) {
 function assignBassTrack(rowIdx, val) {
   const idx = val === '' ? null : parseInt(val);
   bassAssignment[rowIdx] = idx;
+  sendBassProgChange();
+  updateBassSummary();
   buildAllNotes();
   updatePlayBtn();
 }
@@ -825,6 +1059,7 @@ function assignTrack(ch, val) {
     }
   }
   assignment[ch] = idx;
+  if (ch === 9) sendDrumProgChange();
   buildAllNotes();
   updatePlayBtn();
 }
