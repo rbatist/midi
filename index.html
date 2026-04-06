@@ -57,8 +57,41 @@
       align-items: center;
       gap: 10px;
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
     h1 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; flex-shrink: 0; }
+    h1 .title-text { flex-shrink: 0; }
+    h1 .pc-badges { display: flex; gap: 8px; align-items: center; margin-left: auto; flex-wrap: wrap; }
+    .pc-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid transparent;
+      transition: color 0.3s, box-shadow 0.3s, border-color 0.3s;
+    }
+    .pc-badge.drums {
+      color: #a78bfa;
+      border-color: #a78bfa55;
+      background: #1e103388;
+    }
+    .pc-badge.drums.active {
+      color: #c4b5fd;
+      border-color: #a78bfa;
+      box-shadow: 0 0 8px #a78bfa99, 0 0 18px #a78bfa44, inset 0 0 6px #a78bfa22;
+    }
+    .pc-badge.bass {
+      color: #34d399;
+      border-color: #34d39955;
+      background: #0f293a88;
+    }
+    .pc-badge.bass.active {
+      color: #6ee7b7;
+      border-color: #34d399;
+      box-shadow: 0 0 8px #34d39999, 0 0 18px #34d39944, inset 0 0 6px #34d39922;
+    }
 
     .card {
       background: var(--surface);
@@ -379,7 +412,14 @@
 </head>
 <body>
 
-<h1><span class="dot"></span> MIDI Player → Alesis SR18</h1>
+<h1>
+  <span class="dot"></span>
+  <span class="title-text">MIDI Player → Alesis SR18</span>
+  <div class="pc-badges">
+    <span class="pc-badge drums" id="pcDrumsBadge">DRUMS —</span>
+    <span class="pc-badge bass" id="pcBassBadge">BASS —</span>
+  </div>
+</h1>
 
 <div class="scroll-area">
 
@@ -557,10 +597,6 @@
     <div class="time" id="timeLabel">0:00 / 0:00</div>
   </div>
   <div class="status" id="transportStatus"></div>
-  <div id="pcDisplay" style="font-size:0.76rem;color:var(--dim);margin-top:6px;display:flex;gap:20px;flex-wrap:wrap;">
-    <span>Drums: <span id="pcDrums" style="color:var(--text)">default</span></span>
-    <span>Bass: <span id="pcBass" style="color:var(--text)">default</span></span>
-  </div>
 </div>
 
 </div><!-- /.scroll-area -->
@@ -775,16 +811,14 @@ const SR18_BASS_PC = {
 
 // SR-18 drum kit matching: keywords in track naam → program change
 const SR18_DRUM_KITS = [
-  { pc: 46, name: 'Metal',      keywords: ['tama', 'artstar'] },
-  { pc: 74, name: 'Stndrd1',    keywords: ['ludwig'] },
-  { pc: 54, name: 'Rock01',     keywords: ['pearl'] },
-  { pc: 32, name: 'Jazz01',     keywords: ['gretsch', 'grestch'] },
-  { pc: 75, name: 'Studio01',   keywords: ['collector', ' dw ', 'dw|', 'dw c'] },
-  { pc: 76, name: 'Studio02',   keywords: ['yamaha'] },
-  { pc: 49, name: 'Power01',    keywords: ['sonor'] },
-  { pc: 93, name: 'TiteKit1',   keywords: ['mapex', 'saturn'] },
-  { pc: 77, name: 'Studio03',   keywords: ['premier', 'signia'] },
-  { pc: 15, name: 'ElecTR08',   keywords: ['roland', '808', '909', 'tr-'] },
+  { pc: 46, name: 'Metal',    keywords: ['tama', 'artstar'] },                    // TAMA Artstar II
+  { pc: 49, name: 'Power01',  keywords: ['granstar', 'sonor'] },                  // TAMA Granstar / Sonor
+  { pc: 54, name: 'Rock01',   keywords: ['pearl'] },                              // Pearl Masters
+  { pc: 73, name: 'Solid1',   keywords: ['phonic', 'gretsch phon'] },             // Gretsch Phonic
+  { pc: 20, name: 'Funk01',   keywords: ['ludwig'] },                             // Ludwig
+  { pc: 70, name: 'RoomKit1', keywords: ['gretsch', 'grestch'] },                 // Gretsch (generic)
+  { pc: 75, name: 'Studio01', keywords: ['collector', ' dw ', 'dw|', 'dw c'] },  // DW Collector's
+  { pc: 15, name: 'ElecTR08', keywords: ['roland', '808', '909', 'tr-'] },        // Roland / electronic
 ];
 
 function matchDrumKit(trackName) {
@@ -816,16 +850,28 @@ function updatePCDisplay() {
   const dIdx = assignment[9];
   const dTrack = (dIdx != null) ? parsedMidi?.tracks[dIdx] : null;
   const kit = dTrack ? matchDrumKit(dTrack.name) : null;
-  document.getElementById('pcDrums').textContent =
-    kit ? `PC ${kit.pc} — ${kit.name}` : 'default';
+  const drumBadge = document.getElementById('pcDrumsBadge');
+  if (kit) {
+    drumBadge.textContent = `DRUMS  PC${String(kit.pc).padStart(3,'0')} ${kit.name}`;
+    drumBadge.classList.add('active');
+  } else {
+    drumBadge.textContent = 'DRUMS —';
+    drumBadge.classList.remove('active');
+  }
 
   // Bass
   const bIdx = bassAssignment.find(i => i !== null);
   const bTrack = (bIdx != null) ? _cachedTracks.find(t => t.i === bIdx) : null;
   const bPc   = bTrack ? SR18_BASS_PC[bTrack.instrNum] : null;
   const bName = bTrack ? GM_BASS_NAMES[bTrack.instrNum] : null;
-  document.getElementById('pcBass').textContent =
-    bPc != null ? `PC ${String(bPc).padStart(3, '0')} — ${bName || ''}` : 'default';
+  const bassBadge = document.getElementById('pcBassBadge');
+  if (bPc != null) {
+    bassBadge.textContent = `BASS  PC${String(bPc).padStart(3,'0')} ${bName || ''}`;
+    bassBadge.classList.add('active');
+  } else {
+    bassBadge.textContent = 'BASS —';
+    bassBadge.classList.remove('active');
+  }
 }
 
 function buildTrackList() {
