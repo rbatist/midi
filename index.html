@@ -149,21 +149,21 @@
     /* Dropzone */
     .dropzone {
       border: 2px dashed var(--border);
-      border-radius: 10px;
-      padding: 14px 16px;
+      border-radius: 8px;
+      padding: 5px 12px;
       text-align: center;
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
       color: var(--dim);
-      height: 100%;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
       justify-content: center;
+      gap: 8px;
     }
     .dropzone:hover, .dropzone.over { border-color: var(--accent); background: rgba(249,115,22,0.05); color: var(--text); }
-    .dropzone .dz-icon { font-size: 1.3rem; margin-bottom: 4px; }
-    .dropzone .dz-hint { font-size: 0.72rem; margin-top: 3px; }
+    .dropzone .dz-icon { font-size: 1rem; flex-shrink: 0; }
+    .dropzone .dz-hint { font-size: 0.72rem; margin-top: 2px; }
 
     /* Channel assignment */
     .ch-row {
@@ -515,8 +515,7 @@
     <div class="card-title">MIDI Bestand</div>
     <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
       <div class="dz-icon">🎵</div>
-      <div>Sleep een .mid bestand hierheen of klik</div>
-      <div class="dz-hint">MIDI Type 0 &amp; 1 ondersteund</div>
+      <div>Sleep of klik om een .mid bestand te laden</div>
     </div>
     <input type="file" id="fileInput" accept=".mid,.midi" class="hidden">
     <div class="status" id="fileStatus"></div>
@@ -706,8 +705,7 @@ async function loadFile(file) {
     const buf = await file.arrayBuffer();
     parsedMidi = new Midi(buf);
     totalSecs = parsedMidi.duration;
-    dz.innerHTML = `<div class="dz-icon">✅</div><div>${file.name}</div>
-      <div class="dz-hint">${parsedMidi.tracks.length} tracks · ${fmt(totalSecs)}</div>`;
+    dz.innerHTML = `<div class="dz-icon">✅</div><div style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.3"><span style="color:var(--text);font-size:0.85rem">${file.name}</span><span class="dz-hint">${parsedMidi.tracks.length} tracks · ${fmt(totalSecs)}</span></div>`;
     setStatus('fileStatus', '', '');
     buildTrackList();
     buildAllNotes();
@@ -829,19 +827,24 @@ function matchDrumKit(trackName) {
   return null;
 }
 
+const DEFAULT_DRUM_PC = 46;
+const DEFAULT_DRUM_NAME = 'Metal';
+const DEFAULT_BASS_PC = 0;
+
 function sendDrumProgChange() {
   const idx = assignment[9];
   const track = (idx != null) ? parsedMidi?.tracks[idx] : null;
   const kit = track ? matchDrumKit(track.name) : null;
-  if (kit && midiOutput) midiOutput.send([0xC9, kit.pc]); // Ch 10 (0-indexed: 9)
+  const pc = kit ? kit.pc : DEFAULT_DRUM_PC;
+  if (midiOutput) midiOutput.send([0xC9, pc]); // Ch 10 (0-indexed: 9)
   updatePCDisplay();
 }
 
 function sendBassProgChange() {
   const firstIdx = bassAssignment.find(idx => idx !== null);
   const track = (firstIdx != null) ? _cachedTracks.find(t => t.i === firstIdx) : null;
-  const pc = track ? SR18_BASS_PC[track.instrNum] : null;
-  if (pc != null && midiOutput) midiOutput.send([0xC0, pc]); // Ch 1 (0-indexed: 0)
+  const pc = (track ? SR18_BASS_PC[track.instrNum] : null) ?? DEFAULT_BASS_PC;
+  if (midiOutput) midiOutput.send([0xC0, pc]); // Ch 1 (0-indexed: 0)
   updatePCDisplay();
 }
 
@@ -850,28 +853,20 @@ function updatePCDisplay() {
   const dIdx = assignment[9];
   const dTrack = (dIdx != null) ? parsedMidi?.tracks[dIdx] : null;
   const kit = dTrack ? matchDrumKit(dTrack.name) : null;
+  const drumPc   = kit ? kit.pc   : DEFAULT_DRUM_PC;
+  const drumName = kit ? kit.name : DEFAULT_DRUM_NAME;
   const drumBadge = document.getElementById('pcDrumsBadge');
-  if (kit) {
-    drumBadge.textContent = `DRUMS  PC${String(kit.pc).padStart(3,'0')} ${kit.name}`;
-    drumBadge.classList.add('active');
-  } else {
-    drumBadge.textContent = 'DRUMS —';
-    drumBadge.classList.remove('active');
-  }
+  drumBadge.textContent = `DRUMS PC${String(drumPc).padStart(3,'0')}: ${drumName}`;
+  drumBadge.classList.toggle('active', !!kit);
 
   // Bass
   const bIdx = bassAssignment.find(i => i !== null);
   const bTrack = (bIdx != null) ? _cachedTracks.find(t => t.i === bIdx) : null;
-  const bPc   = bTrack ? SR18_BASS_PC[bTrack.instrNum] : null;
-  const bName = bTrack ? GM_BASS_NAMES[bTrack.instrNum] : null;
+  const bPc   = (bTrack ? SR18_BASS_PC[bTrack.instrNum] : null) ?? DEFAULT_BASS_PC;
+  const bName = bTrack ? (GM_BASS_NAMES[bTrack.instrNum] || '') : '';
   const bassBadge = document.getElementById('pcBassBadge');
-  if (bPc != null) {
-    bassBadge.textContent = `BASS  PC${String(bPc).padStart(3,'0')} ${bName || ''}`;
-    bassBadge.classList.add('active');
-  } else {
-    bassBadge.textContent = 'BASS —';
-    bassBadge.classList.remove('active');
-  }
+  bassBadge.textContent = `BASS PC${String(bPc).padStart(3,'0')}${bName ? ': ' + bName : ''}`;
+  bassBadge.classList.toggle('active', bTrack != null && SR18_BASS_PC[bTrack.instrNum] != null);
 }
 
 function buildTrackList() {
