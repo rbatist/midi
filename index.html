@@ -769,22 +769,22 @@ const SR18_BASS_PC = {
   35: 15,  // Fretless Bass   → 015 Fretless
   36:  8,  // Slap Bass 1     → 008 Slap1
   37: 10,  // Slap Bass 2     → 010 Slap3
-  38: 42,  // Synth Bass 1    → 042 Synbass2
-  39: 44,  // Synth Bass 2    → 044 AndMoge1
+  38: 35,  // Synth Bass 1    → 035 Synbass1
+  39: 38,  // Synth Bass 2    → 038 AndMoge1
 };
 
 // SR-18 drum kit matching: keywords in track naam → program change
 const SR18_DRUM_KITS = [
-  { pc: 17, name: 'TAMA Artstar II',      keywords: ['tama', 'artstar'] },
-  { pc:  2, name: 'Ludwig Classic Maple', keywords: ['ludwig'] },
-  { pc:  1, name: 'Pearl Export',         keywords: ['pearl'] },
-  { pc: 33, name: 'Gretsch USA Custom',   keywords: ['gretsch', 'grestch'] },
-  { pc:  9, name: 'DW Collector\'s',      keywords: ['collector', ' dw ', '|dw|', 'dw|'] },
-  { pc: 10, name: 'Yamaha Recording',     keywords: ['yamaha'] },
-  { pc: 18, name: 'Sonor SQ2',            keywords: ['sonor'] },
-  { pc: 20, name: 'Mapex Saturn',         keywords: ['mapex', 'saturn'] },
-  { pc: 11, name: 'Premier Signia',       keywords: ['premier', 'signia'] },
-  { pc: 26, name: 'Roland TR-808/909',    keywords: ['roland', '808', '909', 'tr-'] },
+  { pc: 46, name: 'Metal',      keywords: ['tama', 'artstar'] },
+  { pc: 74, name: 'Stndrd1',    keywords: ['ludwig'] },
+  { pc: 54, name: 'Rock01',     keywords: ['pearl'] },
+  { pc: 32, name: 'Jazz01',     keywords: ['gretsch', 'grestch'] },
+  { pc: 75, name: 'Studio01',   keywords: ['collector', ' dw ', 'dw|', 'dw c'] },
+  { pc: 76, name: 'Studio02',   keywords: ['yamaha'] },
+  { pc: 49, name: 'Power01',    keywords: ['sonor'] },
+  { pc: 93, name: 'TiteKit1',   keywords: ['mapex', 'saturn'] },
+  { pc: 77, name: 'Studio03',   keywords: ['premier', 'signia'] },
+  { pc: 15, name: 'ElecTR08',   keywords: ['roland', '808', '909', 'tr-'] },
 ];
 
 function matchDrumKit(trackName) {
