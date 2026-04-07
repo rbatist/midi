@@ -576,7 +576,7 @@
 <h1>
   <span class="dot"></span>
   <span class="title-text">MIDI Player → Alesis SR18</span>
-  <span style="font-size:0.62rem;font-weight:400;color:var(--dim);letter-spacing:0.04em;flex-shrink:0;">v0.6.0</span>
+  <span style="font-size:0.62rem;font-weight:400;color:var(--dim);letter-spacing:0.04em;flex-shrink:0;">v0.6.1.1</span>
   <div class="pc-badges">
     <span class="pc-badge drums" id="pcDrumsBadge" onclick="openPcPopup('drums')">DRUMS —</span>
     <span class="pc-badge bass" id="pcBassBadge" onclick="openPcPopup('bass')">BASS —</span>
@@ -760,7 +760,7 @@
       <input type="range" id="tempoSlider" min="40" max="200" value="100"
              oninput="document.getElementById('tempoVal').textContent = this.value; updateBpmDisplay(); if(clockRunning) setClockStatus(true);">
     </div>
-    <button class="clock-out-btn" id="clockOutBtn" onclick="toggleClockOut()">⏱ Clock Out: AAN</button>
+    <button class="clock-out-btn off" id="clockOutBtn" onclick="toggleClockOut()">⏱ Clock Out: UIT</button>
   </div>
   <div class="prog-row">
     <div class="prog-wrap" id="progWrap" onclick="seek(event)">
@@ -783,6 +783,9 @@
     <label>Handmatig:</label>
     <input type="number" id="pcManualInput" min="0" max="127" placeholder="0–127">
     <button class="accent" onclick="applyManualPc()">Stuur</button>
+  </div>
+  <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+    <button style="width:100%;font-size:0.75rem;color:var(--dim);border-color:var(--border);" onclick="resetPcOverride()">↺ Reset naar auto-detectie</button>
   </div>
 </div>
 
@@ -1027,7 +1030,8 @@ function matchDrumKit(trackName) {
 
 const DEFAULT_DRUM_PC = 46;
 const DEFAULT_DRUM_NAME = 'Metal';
-const DEFAULT_BASS_PC = 1;
+const DEFAULT_BASS_PC   = 1;
+const DEFAULT_BASS_NAME = 'Electric Bass 2';
 
 function sendDrumProgChange() {
   const idx = assignment[9];
@@ -1061,9 +1065,9 @@ function updatePCDisplay() {
   const bIdx = bassAssignment.find(i => i !== null);
   const bTrack = (bIdx != null) ? _cachedTracks.find(t => t.i === bIdx) : null;
   const bPc   = (bTrack ? SR18_BASS_PC[bTrack.instrNum] : null) ?? DEFAULT_BASS_PC;
-  const bName = bTrack ? (GM_BASS_NAMES[bTrack.instrNum] || '') : '';
+  const bName = bTrack ? (GM_BASS_NAMES[bTrack.instrNum] || DEFAULT_BASS_NAME) : DEFAULT_BASS_NAME;
   const bassBadge = document.getElementById('pcBassBadge');
-  bassBadge.textContent = `BASS PC${String(bPc).padStart(3,'0')}${bName ? ': ' + bName : ''}`;
+  bassBadge.textContent = `BASS PC${String(bPc).padStart(3,'0')}: ${bName}`;
   bassBadge.classList.toggle('active', bTrack != null && SR18_BASS_PC[bTrack.instrNum] != null);
 }
 
@@ -1982,6 +1986,25 @@ function applyManualPc() {
   applyPresetPc(val, entry?.name || `#${val}`, entry?.full);
 }
 
+function resetPcOverride() {
+  if (pcPopupMode === 'drums') {
+    manualDrumPc = null;
+    const badge = document.getElementById('pcDrumsBadge');
+    badge.textContent = 'DRUMS —';
+    badge.classList.remove('active');
+    // Stuur auto-detectie PC opnieuw
+    _origSendDrum();
+  } else if (pcPopupMode === 'bass') {
+    manualBassPc = null;
+    const badge = document.getElementById('pcBassBadge');
+    badge.textContent = 'BASS —';
+    badge.classList.remove('active');
+    // Stuur auto-detectie PC opnieuw
+    _origSendBass();
+  }
+  closePcPopup();
+}
+
 // Patch sendDrumProgChange / sendBassProgChange om manual override te respecteren
 const _origSendDrum = sendDrumProgChange;
 sendDrumProgChange = function() {
@@ -2031,7 +2054,7 @@ let clockNextTickAc  = 0;       // next tick time in AudioContext seconds
 let clockBeatPhase   = 0;       // 0-3 beat counter for dot display
 let clockPulseCount  = 0;       // counts 0-23 per beat
 let clockRunning     = false;
-let clockOutEnabled  = true;
+let clockOutEnabled  = false;
 
 const CLOCK_LOOKAHEAD_MS = 80;  // schedule ticks this far ahead
 const CLOCK_SCHED_MS     = 30;  // run scheduler every 30ms
