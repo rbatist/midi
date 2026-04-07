@@ -408,6 +408,90 @@
     .status.ok  { color: var(--green); }
     .status.err { color: var(--red); }
 
+    /* MIDI Clock */
+    .clock-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .bpm-display {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    .bpm-number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      color: var(--accent);
+      line-height: 1;
+      transition: color 0.1s;
+    }
+    .bpm-number.pulse {
+      color: #fff;
+    }
+    .bpm-unit {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+    .clock-beat-dots {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .beat-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      transition: background 0.04s, box-shadow 0.04s;
+    }
+    .beat-dot.active {
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+    }
+    .clock-out-btn {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--green);
+      color: var(--green);
+      background: #0d2a1a;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
+    }
+    .clock-out-btn:hover:not(:disabled) {
+      background: #163d28;
+      box-shadow: 0 0 8px #22c55e55;
+    }
+    .clock-out-btn.off {
+      border-color: var(--border);
+      color: var(--dim);
+      background: var(--surface2);
+      box-shadow: none;
+    }
+    .clock-out-btn.off:hover:not(:disabled) {
+      background: #4b5563;
+      box-shadow: none;
+    }
+    .clock-status {
+      font-size: 0.7rem;
+      color: var(--dim);
+      white-space: nowrap;
+    }
+    .clock-status.sending { color: var(--green); }
+
     /* SR18 Setup guide */
     .guide-toggle {
       width: 100%;
@@ -492,7 +576,7 @@
 <h1>
   <span class="dot"></span>
   <span class="title-text">MIDI Player → Alesis SR18</span>
-  <span style="font-size:0.62rem;font-weight:400;color:var(--dim);letter-spacing:0.04em;flex-shrink:0;">v0.5.5</span>
+  <span style="font-size:0.62rem;font-weight:400;color:var(--dim);letter-spacing:0.04em;flex-shrink:0;">v0.6.0</span>
   <div class="pc-badges">
     <span class="pc-badge drums" id="pcDrumsBadge" onclick="openPcPopup('drums')">DRUMS —</span>
     <span class="pc-badge bass" id="pcBassBadge" onclick="openPcPopup('bass')">BASS —</span>
@@ -661,11 +745,22 @@
       <button class="accent" id="playBtn" onclick="togglePlay()" disabled>▶ Play</button>
       <button id="stopBtn" onclick="stopAll()" disabled>⏹ Stop</button>
     </div>
+    <div class="bpm-display">
+      <span class="bpm-number" id="bpmDisplay">—</span>
+      <span class="bpm-unit">BPM</span>
+    </div>
+    <div class="clock-beat-dots" id="beatDots">
+      <div class="beat-dot" id="bd0"></div>
+      <div class="beat-dot" id="bd1"></div>
+      <div class="beat-dot" id="bd2"></div>
+      <div class="beat-dot" id="bd3"></div>
+    </div>
     <div class="tempo-group">
       <label>Tempo: <strong id="tempoVal">100</strong>%</label>
       <input type="range" id="tempoSlider" min="40" max="200" value="100"
-             oninput="document.getElementById('tempoVal').textContent = this.value">
+             oninput="document.getElementById('tempoVal').textContent = this.value; updateBpmDisplay(); if(clockRunning) setClockStatus(true);">
     </div>
+    <button class="clock-out-btn" id="clockOutBtn" onclick="toggleClockOut()">⏱ Clock Out: AAN</button>
   </div>
   <div class="prog-row">
     <div class="prog-wrap" id="progWrap" onclick="seek(event)">
@@ -674,6 +769,7 @@
     <div class="time" id="timeLabel">0:00 / 0:00</div>
   </div>
   <div class="status" id="transportStatus"></div>
+  <div class="clock-status" id="clockOutStatus" style="margin-top:4px;"></div>
 </div>
 
 </div><!-- /.scroll-area -->
@@ -805,6 +901,7 @@ async function loadFile(file) {
     buildTrackList();
     buildAllNotes();
     document.getElementById('transportCard').classList.remove('hidden');
+    updateBpmDisplay();
     updatePlayBtn();
   } catch (e) { setStatus('fileStatus', 'Laadfout: ' + e.message, 'err'); }
 }
@@ -1541,6 +1638,7 @@ function play() {
   document.getElementById('stopBtn').disabled = false;
   schedTimer = setInterval(scheduler, SCHED_MS);
   rafId = requestAnimationFrame(updateUI);
+  startClockOut();
   setStatus('transportStatus', `Speelt via ${midiOutput.name}…`, 'ok');
 }
 
@@ -1550,6 +1648,7 @@ function pause() {
   clearInterval(schedTimer);
   cancelAnimationFrame(rafId);
   allNotesOff();
+  stopClockOut();
   document.getElementById('playBtn').textContent = '▶ Play';
   setStatus('transportStatus', `Gepauzeerd op ${fmt(startOffset)}`, '');
 }
@@ -1561,6 +1660,7 @@ function stopAll() {
   clearInterval(schedTimer);
   cancelAnimationFrame(rafId);
   allNotesOff();
+  stopClockOut();
   document.getElementById('playBtn').textContent = '▶ Play';
   document.getElementById('stopBtn').disabled = true;
   document.getElementById('progFill').style.width = '0%';
@@ -1920,6 +2020,161 @@ updatePCDisplay = function() {
     badge.classList.add('active');
   }
 };
+
+// ── MIDI Clock Out ────────────────────────────────────────────────
+// MIDI spec: 24 clock pulses per quarter note (ppqn)
+// We schedule clock ticks via AudioContext same as notes for tight timing.
+
+let clockBpm         = 120;     // current BPM (tempo-slider adjusted)
+let clockTickTimer   = null;    // setInterval handle for clock scheduling
+let clockNextTickAc  = 0;       // next tick time in AudioContext seconds
+let clockBeatPhase   = 0;       // 0-3 beat counter for dot display
+let clockPulseCount  = 0;       // counts 0-23 per beat
+let clockRunning     = false;
+let clockOutEnabled  = true;
+
+const CLOCK_LOOKAHEAD_MS = 80;  // schedule ticks this far ahead
+const CLOCK_SCHED_MS     = 30;  // run scheduler every 30ms
+
+function getBaseBpm() {
+  // Extract first tempo from parsed MIDI (in microseconds per beat)
+  if (!parsedMidi) return 120;
+  const tempoEvt = parsedMidi.header?.tempos?.[0];
+  if (tempoEvt && tempoEvt.bpm) return tempoEvt.bpm;
+  // fallback: Tone.js Midi stores tempo differently
+  if (parsedMidi.header?.ppq) {
+    // try raw tempos array
+    const raw = parsedMidi.header.tempos;
+    if (raw && raw.length > 0 && raw[0].bpm) return raw[0].bpm;
+  }
+  return 120;
+}
+
+function currentBpm() {
+  return getBaseBpm() * tempo();
+}
+
+function updateBpmDisplay() {
+  const bpm = currentBpm();
+  clockBpm = bpm;
+  const el = document.getElementById('bpmDisplay');
+  if (el) el.textContent = Math.round(bpm);
+}
+
+function startClockOut() {
+  if (clockRunning) return;
+  clockRunning = true;
+  updateBpmDisplay();
+
+  if (clockOutEnabled && midiOutput) {
+    midiOutput.send([0xFA]); // MIDI Start
+  }
+
+  clockBeatPhase = 0;
+  clockPulseCount = 0;
+  clockNextTickAc = audioCtx ? audioCtx.currentTime : 0;
+  clockTickTimer = setInterval(scheduleClock, CLOCK_SCHED_MS);
+  setClockStatus(true);
+}
+
+function stopClockOut() {
+  if (!clockRunning) return;
+  clockRunning = false;
+  clearInterval(clockTickTimer);
+  clockTickTimer = null;
+
+  if (clockOutEnabled && midiOutput) {
+    midiOutput.send([0xFC]); // MIDI Stop
+  }
+
+  // Reset beat dots
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById('bd' + i);
+    if (d) d.classList.remove('active');
+  }
+  setClockStatus(false);
+}
+
+function scheduleClock() {
+  if (!clockRunning || !audioCtx) return;
+
+  updateBpmDisplay();
+  const bpm = clockBpm;
+  const secPerPulse = 60 / (bpm * 24); // seconds between each tick (24 ppqn)
+  const now     = audioCtx.currentTime;
+  const until   = now + CLOCK_LOOKAHEAD_MS / 1000;
+
+  while (clockNextTickAc < until) {
+    const tickTime = clockNextTickAc;
+
+    if (tickTime >= now - 0.01) {
+      // Send clock tick via midiOutput scheduled timestamp
+      if (clockOutEnabled && midiOutput) {
+        const ms = Math.max(0, (tickTime - now) * 1000);
+        midiOutput.send([0xF8], performance.now() + ms);
+      }
+
+      // Beat pulse: tick 0 of each beat (every 24 pulses)
+      if (clockPulseCount === 0) {
+        const beatIdx = clockBeatPhase;
+        const delayMs = Math.max(0, (tickTime - now) * 1000);
+        setTimeout(() => {
+          flashBeat(beatIdx);
+          flashBpmNumber();
+        }, delayMs);
+        clockBeatPhase = (clockBeatPhase + 1) % 4;
+      }
+
+      clockPulseCount = (clockPulseCount + 1) % 24;
+    }
+
+    clockNextTickAc += secPerPulse;
+  }
+}
+
+function flashBeat(idx) {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById('bd' + i);
+    if (d) d.classList.toggle('active', i === idx);
+  }
+}
+
+function flashBpmNumber() {
+  const el = document.getElementById('bpmDisplay');
+  if (!el) return;
+  el.classList.add('pulse');
+  setTimeout(() => el.classList.remove('pulse'), 80);
+}
+
+function toggleClockOut() {
+  clockOutEnabled = !clockOutEnabled;
+  const btn = document.getElementById('clockOutBtn');
+  if (clockOutEnabled) {
+    btn.textContent = '⏱ Clock Out: AAN';
+    btn.classList.remove('off');
+    if (clockRunning && midiOutput) midiOutput.send([0xFA]);
+  } else {
+    btn.textContent = '⏱ Clock Out: UIT';
+    btn.classList.add('off');
+    if (clockRunning && midiOutput) midiOutput.send([0xFC]);
+  }
+  setClockStatus(clockRunning);
+}
+
+function setClockStatus(active) {
+  const el = document.getElementById('clockOutStatus');
+  if (!el) return;
+  if (active && clockOutEnabled) {
+    el.textContent = `Stuurt clock @ ${Math.round(clockBpm)} BPM`;
+    el.className = 'clock-status sending';
+  } else if (active) {
+    el.textContent = 'Clock uit uitgeschakeld';
+    el.className = 'clock-status';
+  } else {
+    el.textContent = 'Inactief';
+    el.className = 'clock-status';
+  }
+}
 
 // ── Init ──────────────────────────────────────────────────────────
 initMidi();
