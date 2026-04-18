@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Talent 1 — De Grote 40 Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+/* Behoud van de originele paarse Talent-stijl */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Nunito', sans-serif; background: #1a0533; color: #fff; min-height: 100vh; overflow: hidden; position: fixed; width: 100%; height: 100%; }
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 16px; opacity: 0; pointer-events: none; transition: 0.3s; transform: scale(0.95); }
+.screen.active { opacity: 1; pointer-events: all; transform: scale(1); }
+.btn { background: #ffd93d; color: #1a0533; border: none; padding: 18px 30px; border-radius: 20px; font-weight: 900; font-size: 1.2rem; cursor: pointer; box-shadow: 0 6px 0 #b38f00; font-family: 'Fredoka One', cursive; text-transform: uppercase; }
+.opt { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); padding: 16px; border-radius: 15px; margin: 10px 0; cursor: pointer; font-weight: 600; transition: 0.2s; }
+.opt.correct { background: #6bcb77 !important; border-color: #fff !important; }
+.opt.wrong { background: #ff6b6b !important; }
+.progress-bar { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; margin: 20px 0; overflow: hidden; }
+.progress-fill { height: 100%; background: #ffd93d; width: 0%; transition: 0.3s; }
+</style>
+</head>
+<body>
+    <div id="screen-home" class="screen active">
+        <h1 style="font-family:'Fredoka One'; font-size: 3rem; margin-top: 60px; color: #ffd93d; text-align:center;">TALENT 1<br><span style="font-size:1.2rem; color:#fff;">De Grote 40</span></h1>
+        <p style="margin-bottom: 40px; opacity: 0.8; text-align:center;">Thema 1, 2 & 3: Grammatica & Spelling</p>
+        <button class="btn" onclick="startGame()">START QUIZ</button>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <div style="width: 100%; max-width: 500px;">
+            <div id="q-cat" style="color:#ffd93d; font-weight:900; margin-bottom:10px; text-transform:uppercase; font-size:0.8rem;">THEMA</div>
+            <h2 id="q-text" style="margin-bottom: 20px; font-size: 1.25rem;">Laden...</h2>
+            <div id="options-list"></div>
+        </div>
+        <div id="feedback-area" style="display:none; margin-top: 20px; width: 100%; max-width: 500px;">
+            <p id="explanation-text" style="background:rgba(255,255,255,0.15); padding:15px; border-radius:10px; margin-bottom:15px; font-size: 0.95rem; line-height:1.4;"></p>
+            <button id="next-btn" class="btn" style="width: 100%;">VOLGENDE</button>
+        </div>
+    </div>
+
+<script>
+const questions = [
+  // --- 1.7 - Inversie ---
+  { cat:"1.7 - Inversie", v:"In welke zin is de volgorde van de persoonsvorm en het onderwerp omgedraaid?", o:["Morgen gaan we op kamp.","We gaan morgen op kamp.","Gaan we morgen op kamp?","We zullen morgen gaan."], c:0, u:"Dit heet inversie: 'gaan' staat voor 'we' omdat 'Morgen' vooraan staat." },
+  { cat:"1.7 - Inversie", v:"Maak de zin correct af: 'Gisteren...'", o:["ik heb een taart gebakken.","heb ik een taart gebakken.","heb een taart gebakken ik.","ik een taart gebakken heb."], c:1, u:"Na een bepaling van tijd (Gisteren) krijg je inversie: pv voor het onderwerp." },
+  { cat:"1.7 - Inversie", v:"Wanneer gebruik je GEEN inversie?", o:["In een vraagzin","Als een zin met het onderwerp begint","Als de zin met een bijwoord begint","In een zin met 'omdat'"], c:1, u:"Als de zin begint met het onderwerp (Ik loop...), staat de persoonsvorm gewoon op de tweede plek." },
+  
+  // --- 1.8 - Stam van werkwoorden ---
+  { cat:"1.8 - De Stam", v:"Wat is de stam van het werkwoord 'beloven'?", o:["belov","belove","beloof","beloofd"], c:2, u:"Hele werkwoord minus -en is 'belov', maar voor de ik-vorm (stam) schrijf je 'beloof'." },
+  { cat:"1.8 - De Stam", v:"Wat is de ik-vorm van 'verhuizen'?", o:["verhuize","verhuiz","verhuis","verhuisd"], c:2, u:"De z aan het eind van de stam wordt een s: ik verhuis." },
+  { cat:"1.8 - De Stam", v:"Wat is de stam van 'antwoorden'?", o:["antwoor","antwoord","antwoordt","antwoorde"], c:1, u:"Haal -en van het hele werkwoord af: antwoord." },
+  
+  // --- 1.8 - Verleden tijd (Zwak/'t Kofschip) ---
+  { cat:"1.8 - Verleden tijd", v:"Wat is de verleden tijd van 'fietsen'?", o:["fietsde","fietste","fietsden","fietsten"], c:1, u:"De 's' zit in 't kofschip, dus stam (fiets) + te." },
+  { cat:"1.8 - Verleden tijd", v:"Wat is de verleden tijd van 'reizen'?", o:["reiste","reiste n","reizden","reisde"], c:3, u:"De stam van reizen is 'reiz'. De z zit NIET in 't kofschip, dus stam (reis) + de." },
+  { cat:"1.8 - Verleden tijd", v:"Welke vorm is juist?", o:["Hij krabte aan zijn neus.","Hij krabde aan zijn neus.","Hij krabte n aan zijn neus.","Hij krabden aan zijn neus."], c:1, u:"Stam van krabben is 'krab'. De b zit niet in 't kofschip, dus stam + de." },
+  { cat:"1.8 - Verleden tijd", v:"Wat is de verleden tijd van 'faxen'?", o:["faxde","faxte","faxte n","faxden"], c:1, u:"De 'x' zit in 't kofschip-x, dus stam + te." },
+  
+  // --- 1.8 - Verleden tijd (Sterk) ---
+  { cat:"1.8 - Sterke werkwoorden", v:"Wat is de verleden tijd van 'brengen'?", o:["brengde","brag","bracht","gebragt"], c:2, u:"Brengen is een sterk werkwoord: het verandert van klank." },
+  { cat:"1.8 - Sterke werkwoorden", v:"Wat is de verleden tijd van 'vangen'?", o:["vangde","vong","ving","vongt"], c:2, u:"Vangen wordt ving (enkelvoud) of vingen (meervoud)." },
+  
+  // --- 1.9 - Voltooide tijd ---
+  { cat:"1.9 - Voltooide tijd", v:"Welke zin staat in de voltooide tijd?", o:["Ik eet een appel.","Ik heb een appel gegeten.","Ik at een appel.","Ik zou een appel eten."], c:1, u:"De voltooide tijd herken je aan het hulpwerkwoord (heb) en voltooid deelwoord (gegeten)." },
+  { cat:"1.9 - Voltooide tijd", v:"Welk hulpwerkwoord hoort bij 'verhuizen'?", o:["hebben","zijn","worden","zullen"], c:1, u:"Je zegt: Ik BEN verhuisd (hulpwerkwoord van zijn)." },
+  { cat:"1.9 - Voltooide tijd", v:"Wat is de voltooid tegenwoordige tijd van 'wij lopen'?", o:["wij lopen","wij liepen","wij zijn gelopen","wij hebben gelopen"], c:2, u:"Lopen gebruikt het hulpwerkwoord 'zijn'." },
+  { cat:"1.9 - Voltooid deelwoord", v:"Wat is de juiste spelling?", o:["Ik heb dat niet gehoort.","Ik heb dat niet gehoord.","Ik heb dat niet gehoorde.","Ik heb dat niet gehoordt."], c:1, u:"Horen: de r zit niet in 't kofschip, dus het deelwoord eindigt op een d." },
+  
+  // --- 2.7–2.9 - Adjectieven & Trappen ---
+  { cat:"2.7 - Adjectieven", v:"Welke zin is grammaticaal correct?", o:["Een mooie huis.","Een mooi huis.","Het mooi huis.","De mooie huis."], c:1, u:"Bij een 'het-woord' (huis) krijgt het adjectief GEEN -e als er 'een' voor staat." },
+  { cat:"2.7 - Adjectieven", v:"Wat is een stoffelijk bijvoeglijk naamwoord?", o:["Mooi","Groot","Houten","Snel"], c:2, u:"Houten zegt waarvan iets gemaakt is (stof) en eindigt op -en." },
+  { cat:"2.8 - Trappen", v:"Wat is de overtreffende trap van 'duur'?", o:["Duurder","Het duurst","Meest duur","Duurste"], c:1, u:"Stellend: duur, vergrotend: duurder, overtreffend: het duurst." },
+  { cat:"2.8 - Trappen", v:"Welk woord is de vergrotende trap van 'veel'?", o:["Veler","Veelste","Meer","Meest"], c:2, u:"Veel - meer - meest (onregelmatig)." },
+  { cat:"2.8 - Dan of als?", v:"Kies het juiste woord: 'Jij bent groter ___ ik.'", o:["dan","als","of","zoals"], c:0, u:"Na een vergrotende trap (groter) gebruik je altijd 'dan'." },
+  { cat:"2.8 - Dan of als?", v:"Kies het juiste woord: 'Hij is net zo slim ___ jij.'", o:["dan","als","of","zoals"], c:1, u:"Bij een vergelijking die gelijk is (net zo... als) gebruik je 'als'." },
+
+  // --- 2.9 - Voornaamwoorden ---
+  { cat:"2.9 - Voornaamwoorden", v:"Welk woord is een bezittelijk voornaamwoord?", o:["Ik","Mijn","Mij","Me"], c:1, u:"'Mijn' geeft een bezit aan." },
+  { cat:"2.9 - Voornaamwoorden", v:"In 'Hij geeft hem het boek', wat is 'hem'?", o:["Persoonlijk voornaamwoord","Bezittelijk voornaamwoord","Aanwijzend voornaamwoord","Vragend voornaamwoord"], c:0, u:"'Hem' verwijst naar een persoon." },
+  { cat:"2.9 - Voornaamwoorden", v:"Welk woord is een aanwijzend voornaamwoord?", o:["Wie","Die","Hun","Zij"], c:1, u:"'Die' wijst iets aan (Die jongen)." },
+  { cat:"2.9 - Voornaamwoorden", v:"Wat is het bezittelijk voornaamwoord van 'u'?", o:["U","Uw","Jouw","Zijn"], c:1, u:"U krijgt uw (Uw jas)." },
+
+  // --- 3.7 - Woordvorming (Prefixen) ---
+  { cat:"3.7 - Prefixen", v:"Wat betekent het voorvoegsel 'on-' in 'onvriendelijk'?", o:["Heel erg","Niet","Opnieuw","Samen"], c:1, u:"On- betekent het tegenovergestelde of 'niet'." },
+  { cat:"3.7 - Prefixen", v:"Wat betekent 'her-' in 'hergebruiken'?", o:["Niet","Verkeerd","Opnieuw","Beter"], c:2, u:"Her- betekent dat je iets nog een keer (opnieuw) doet." },
+  { cat:"3.7 - Prefixen", v:"Welk woord heeft een voorvoegsel dat 'tegen' betekent?", o:["Medebeheerder","Antibasis","Onjuist","Wanprestatie"], c:1, u:"Anti- betekent tegen." },
+
+  // --- 3.8 - Scheidbare werkwoorden ---
+  { cat:"3.8 - Werkwoorden", v:"Wat is de juiste zin?", o:["Ik opbel mijn vriend.","Ik bel mijn vriend op.","Ik bel op mijn vriend.","Ik bel op mijn vriend op."], c:1, u:"In een hoofdzin wordt het deel 'op' naar het einde verplaatst." },
+  { cat:"3.8 - Werkwoorden", v:"Wat is de voltooide tijd van 'afmaken'?", o:["Ik heb afgemaakt mijn werk.","Ik heb mijn werk afgemaakt.","Ik heb afmaken mijn werk.","Ik afmaak mijn werk."], c:1, u:"Het voltooid deelwoord (afgemaakt) staat achteraan." },
+  { cat:"3.8 - Werkwoorden", v:"Wat is de persoonsvorm van 'uitnodigen' bij 'wij'?", o:["Wij uitnodigen","Wij nodigen uit","Wij nodigen","Wij uitnodigen uit"], c:1, u:"Het voorvoegsel (uit) scheidt zich van het werkwoord." },
+
+  // --- 3.9 - Bijzinnen ---
+  { cat:"3.9 - Bijzinnen", v:"Waar staat de persoonsvorm in een bijzin?", o:["Aan het begin","Op de tweede plek","Helemaal achteraan","Na het onderwerp"], c:2, u:"In een bijzin (na woorden als 'omdat' of 'dat') staan alle werkwoorden aan het eind." },
+  { cat:"3.9 - Bijzinnen", v:"Welke zin is correct?", o:["Ik weet dat hij morgen komt.","Ik weet dat hij komt morgen.","Ik weet dat komt hij morgen.","Ik weet morgen dat hij komt."], c:0, u:"De persoonsvorm 'komt' staat achteraan." },
+  { cat:"3.9 - Bijzinnen", v:"Maak de zin af: 'Ik blijf binnen, omdat...'", o:["het regent.","regent het.","het is aan het regenen.","het regent hard."], c:0, u:"'Omdat' leidt een bijzin in, dus de persoonsvorm moet achteraan." },
+  { cat:"3.9 - Bijzinnen", v:"Welk woord leidt GEEN bijzin in?", o:["Omdat","Dat","Want","Hoewel"], c:2, u:"'Want' leidt een nevenschikkende zin (hoofdzin) in, geen bijzin." },
+
+  // --- Extra Mix ---
+  { cat:"Mix - Spelling", v:"Hoe schrijf je 'ik' + 'worden'?", o:["Ik word","Ik wordt","Ik worde","Ik word t"], c:0, u:"Stam van worden is 'word'. Bij ik-vorm NOOIT een t." },
+  { cat:"Mix - Spelling", v:"Hoe schrijf je 'jij' + 'worden' in een vraag: '... jij dokter?'", o:["Word","Wordt","Worde","Worden"], c:0, u:"Als 'jij' achter de persoonsvorm staat, komt er GEEN t achter de stam." },
+  { cat:"Mix - Adjectief", v:"Wat is juist?", o:["Een gouden ring","Een goude ring","Een goud ring","Een goudste ring"], c:0, u:"Stoffelijk bijvoeglijk naamwoord: eindigt op -en." },
+  { cat:"Mix - Voornaamwoord", v:"Kies de juiste vorm: 'Dat is de man ___ ik gisteren zag.'", o:["die","dat","wie","wat"], c:0, u:"'Die' verwijst naar een de-woord (de man)." }
+];
+
+let state = { currentIdx: 0, score: 0, answered: false };
+function $(id) { return document.getElementById(id); }
+
+function startGame() {
+    state = { currentIdx: 0, score: 0, answered: false };
+    $('screen-home').classList.remove('active');
+    $('screen-game').classList.add('active');
+    showQuestion();
+}
+
+function showQuestion() {
+    state.answered = false;
+    const q = questions[state.currentIdx];
+    $('q-cat').innerText = q.cat + " (" + (state.currentIdx + 1) + "/40)";
+    $('q-text').innerText = q.v;
+    $('explanation-text').innerText = q.u;
+    $('feedback-area').style.display = 'none';
+    const list = $('options-list');
+    list.innerHTML = '';
+    q.o.forEach((opt, i) => {
+        const div = document.createElement('div');
+        div.className = 'opt';
+        div.innerText = opt;
+        div.onclick = () => check(i, div);
+        list.appendChild(div);
+    });
+    $('progress-fill').style.width = ((state.currentIdx + 1) / 40 * 100) + '%';
+}
+
+function check(idx, el) {
+    if (state.answered) return;
+    state.answered = true;
+    const correct = questions[state.currentIdx].c;
+    if (idx === correct) {
+        el.classList.add('correct');
+        state.score++;
+    } else {
+        el.classList.add('wrong');
+        $('options-list').children[correct].classList.add('correct');
+    }
+    $('feedback-area').style.display = 'block';
+}
+
+$('next-btn').onclick = () => {
+    state.currentIdx++;
+    if (state.currentIdx < questions.length) {
+        showQuestion();
+    } else {
+        showResult();
+    }
+};
+
+function showResult() {
+    $('screen-game').classList.remove('active');
+    document.body.innerHTML = `<div class="screen active" style="justify-content:center; text-align:center;">
+        <h1 style="font-family:'Fredoka One'; font-size:3rem; color:#ffd93d;">KLAAR!</h1>
+        <div style="background:rgba(255,255,255,0.1); padding:30px; border-radius:24px; margin:20px;">
+            <p style="font-size:1.2rem;">Jouw score:</p>
+            <h2 style="font-size:4rem;">${Math.round(state.score/40*100)}%</h2>
+            <p>${state.score} van de 40 goed</p>
+        </div>
+        <button class="btn" onclick="location.reload()">OPNIEUW</button>
+    </div>`;
+}
+</script>
+</body>
+</html>
