@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Geschiedenis Werkplaats — H5 Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+/* Behoud van de vertrouwde structuur en animaties */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Nunito', sans-serif; background: #1b2e1b; color: #fff; min-height: 100vh; overflow: hidden; position: fixed; width: 100%; height: 100%; }
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 16px; opacity: 0; pointer-events: none; transition: 0.3s; transform: translateY(20px); overflow-y: auto; }
+.screen.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+.btn { background: #4ade80; color: #061204; border: none; padding: 18px 24px; border-radius: 20px; font-weight: 900; font-size: 1.1rem; cursor: pointer; box-shadow: 0 6px 0 #166534; font-family: 'Fredoka One', cursive; text-transform: uppercase; }
+.opt { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.1); padding: 16px; border-radius: 18px; margin: 10px 0; cursor: pointer; font-weight: 600; transition: 0.2s; }
+.opt.correct { background: #22c55e !important; border-color: #4ade80 !important; }
+.opt.wrong { background: #ef4444 !important; }
+.progress-bar { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; margin: 20px 0; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #4ade80, #fbbf24); width: 0%; transition: 0.3s; }
+</style>
+</head>
+<body>
+    <div id="screen-home" class="screen active">
+        <h1 style="font-family:'Fredoka One'; font-size: 2.2rem; margin: 50px 0; text-align: center; color: #4ade80;">GESCHIEDENIS WERKPLAATS</h1>
+        <p style="margin-bottom: 30px; text-align:center; opacity: 0.9;">Tijd van Monniken en Ridders<br>(5.1 t/m 5.4)</p>
+        <button class="btn" onclick="startGame()">START 40 VRAGEN</button>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <div style="width: 100%; max-width: 500px;">
+            <div id="q-info" style="color: #4ade80; font-weight: 900; font-size: 0.8rem; margin-bottom: 5px;">HOOFDSTUK 5</div>
+            <h2 id="q-text" style="font-size: 1.15rem; margin-bottom: 20px; line-height: 1.4;">Laden...</h2>
+            <div id="options-list"></div>
+        </div>
+        <div id="feedback-area" style="display:none; margin-top: 20px; width: 100%; max-width: 500px;">
+            <div id="explanation-box" style="padding: 15px; background: rgba(255,255,255,0.1); border-radius: 15px; border-left: 4px solid #fbbf24; font-size: 0.9rem; margin-bottom: 20px;"></div>
+            <button id="next-btn" class="btn" style="width:100%;">VOLGENDE VRAAG</button>
+        </div>
+    </div>
+
+<script>
+const questions = [
+    // --- 5.1: Leenheren en leenmannen ---
+    { v: "Hoe noemen we het systeem waarbij een heer land uitleent in ruil voor trouw?", o: ["Horigheid", "Leenstelsel (feodalisme)", "Centralisatie", "Hofstelsel"], c: 1, u: "Leenheren gaven land aan leenmannen (vazallen) die in ruil daarvoor militaire steun boden." },
+    { v: "Wie was de machtigste koning van de Franken rond het jaar 800?", o: ["Clovis", "Willem de Veroveraar", "Karel de Grote", "Lodewijk de Vrome"], c: 2, u: "Karel de Grote werd in het jaar 800 door de paus tot keizer gekroond." },
+    { v: "Waarom was het voor Karel de Grote lastig om zijn rijk te besturen?", o: ["Er waren geen wegen en weinig mensen konden lezen", "Hij had geen leger", "Hij sprak de taal niet", "Iedereen was protestants"], c: 0, u: "Door het gebrek aan goede verbindingen en geschreven wetten moest hij zijn land verdelen onder leenmannen." },
+    { v: "Hoe noemen we de mannen die Karel hielpen bij het bestuur en de rechtspraak?", o: ["Ridders", "Graven en hertogen", "Monniken", "Burgemeesters"], c: 1, u: "Graven en hertogen waren vazallen die een deel van het rijk namens de koning bestuurden." },
+    { v: "Wat gebeurde er vaak met een leen als een leenman stierf?", o: ["De koning nam het terug", "Het land werd verkocht", "De zoon van de leenman erfde het land", "Het werd aan de kerk gegeven"], c: 2, u: "Dit was een probleem voor de koning: leenmannen gingen de grond als hun eigen bezit zien." },
+    { v: "Wat is een zendgraaf?", o: ["Een graaf die oorlog voert", "Een controleur die namens de koning keek of graven hun werk deden", "Een priester in een kasteel", "Een graaf die het geloof verspreidde"], c: 1, u: "Karel de Grote gebruikte zendgraven om toezicht te houden op zijn vazallen." },
+    { v: "Waarom was er in de vroege middeleeuwen bijna geen handel?", o: ["Geld was verboden", "Reizen was gevaarlijk en wegen waren slecht", "Mensen wilden geen nieuwe spullen", "De islam hield de handel tegen"], c: 1, u: "Na de val van het Romeinse Rijk werd reizen onveilig en de economie werd zelfvoorzienend." },
+    { v: "Wat betekent 'autarkie'?", o: ["Regeren met één koning", "Zelfvoorzienend zijn (leven van eigen opbrengst)", "Vechten met ridders", "Bidden in een klooster"], c: 1, u: "Mensen op een domein produceerden bijna alles wat ze nodig hadden zelf." },
+    { v: "In welk jaar werd Karel de Grote tot keizer gekroond?", o: ["476", "1066", "800", "622"], c: 2, u: "Op kerstnacht in het jaar 800 in Rome." },
+    { v: "Welk volk veroverde Karel de Grote om het christendom te verspreiden?", o: ["De Romeinen", "De Saksen", "De Grieken", "De Spanjaarden"], c: 1, u: "Karel dwong de Saksen zich te bekeren tot het christendom." },
+
+    // --- 5.2: Ridders en kastelen ---
+    { v: "Wie vormden de 'adel' in de middeleeuwen?", o: ["Rijke kooplieden", "De ridders en leenmannen", "De bisschoppen", "De horige boeren"], c: 1, u: "Adel was de groep mensen met een speciale titel die het land bestuurde en oorlog voerde." },
+    { v: "Wat moest een jongen doen om ridder te worden?", o: ["Alleen een examen halen", "Jarenlang trainen als page en schildknaap", "Veel geld betalen aan de paus", "Een kasteel bouwen"], c: 1, u: "Het was een lange en dure opleiding die alleen voor de adel weggelegd was." },
+    { v: "Wat was het belangrijkste wapen van een ridder te paard?", o: ["De handboog", "De lans", "Het kanon", "De katapult"], c: 1, u: "Met een lans kon een ridder tijdens een aanval veel kracht uitoefenen." },
+    { v: "Waarom waren kastelen in het begin vaak van hout?", o: ["Steen was verboden", "Hout was makkelijker en goedkoper te verwerken", "Steen was te zwaar voor de grond", "Hout brandde niet"], c: 1, u: "De eerste kastelen (mottekasteel) waren houten torens op een kunstmatige heuvel." },
+    { v: "Wat is een 'toernooi'?", o: ["Een vergadering van edelen", "Een oefengevecht tussen ridders", "Een feest van de kerk", "Een verkiezing voor een nieuwe koning"], c: 1, u: "Ridders trainden hun vaardigheden tijdens deze publieke evenementen." },
+    { v: "Wat was de functie van een 'schildknaap'?", o: ["Hij moest het eten koken", "Hij hielp de ridder bij zijn wapens en paard", "Hij vocht met de boog", "Hij was de baas van het kasteel"], c: 1, u: "Dit was de tweede stap in de opleiding tot ridder (rond je 14e)." },
+    { v: "Welke erecode hadden ridders?", o: ["De ridderlijkheid", "De wet van de sterkste", "De Magna Charta", "Het Domesday Book"], c: 0, u: "Ridders moesten dapper zijn, trouw aan hun heer en zwakkeren beschermen." },
+    { v: "Waarom stopten ridders later met het dragen van maliënkolders?", o: ["Het was te zwaar", "Het was niet mode", "Pijlen van bogen en kruisbogen gingen erdoorheen", "Het was te duur"], c: 2, u: "Maliënkolders boden onvoldoende bescherming tegen krachtige nieuwe bogen." },
+    { v: "Wat is een 'vazal'?", o: ["Een ander woord voor leenman", "Een horige boer", "Een moslim-soldaat", "Een monnik"], c: 0, u: "Een vazal legde een eed van trouw af aan zijn heer." },
+    { v: "Hoe noemden we de zware metalen platen die ridders later droegen?", o: ["Maliënkolder", "Harnas", "Schild", "Tuniek"], c: 1, u: "Een volledig harnas beschermde de ridder van top tot teen." },
+
+    // --- 5.3: Macht van de kerk ---
+    { v: "Wie staat er aan het hoofd van de christelijke kerk?", o: ["De keizer", "De paus", "De abt", "De profeet"], c: 1, u: "De paus in Rome werd gezien als de opvolger van Petrus." },
+    { v: "Wat deden missionarissen?", o: ["Ze bouwden kastelen", "Ze verspreidden het christendom", "Ze voerden oorlog tegen ridders", "Ze inden belasting"], c: 1, u: "Mensen zoals Willibrord en Bonifatius probeerden heidenen te bekeren." },
+    { v: "In welk land werd de missionaris Bonifatius gedood?", o: ["Engeland", "Frankrijk", "Nederland (bij Dokkum)", "Duitsland"], c: 2, u: "Hij werd in 754 gedood door de Friezen." },
+    { v: "Wat is een klooster?", o: ["Een kasteel voor ridders", "Een plek waar monniken en nonnen afgezonderd leven", "Een marktplaats", "De woning van de koning"], c: 1, u: "In kloosters stond bidden, werken en studeren centraal." },
+    { v: "Wat was een belangrijke taak van monniken in de vroege middeleeuwen?", o: ["Oorlog voeren", "Boeken overschrijven", "Land ontdekken", "Handel drijven"], c: 1, u: "Zij zorgden dat kennis en boeken uit de oudheid bewaard bleven." },
+    { v: "Wat betekent het woord 'heiden'?", o: ["Iemand die heel gelovig is", "Iemand die niet in de christelijke God gelooft", "Een monnik die op reis is", "Een ridder zonder kasteel"], c: 1, u: "De kerk noemde de Germanen die nog in hun eigen goden (zoals Wodan) geloofden heidenen." },
+    { v: "Wie brachten het christendom naar Nederland?", o: ["Romeinen", "Angelsaksische monniken (uit Engeland)", "Ridders van de kruistochten", "De islam"], c: 1, u: "Monniken als Willibrord kwamen uit Ierland en Engeland." },
+    { v: "Wat is de 'tiende'?", o: ["De tiende koning", "Een belasting waarbij je 1/10 van je opbrengst aan de kerk gaf", "Een gebed dat 10 minuten duurt", "Een straf voor ridders"], c: 1, u: "Hiermee betaalde de kerk haar gebouwen en de zorg voor armen." },
+    { v: "Waarom hadden monniken vaak veel macht?", o: ["Ze konden als enige lezen en schrijven", "Ze hadden de grootste legers", "Ze waren altijd familie van de koning", "Ze woonden in de steden"], c: 0, u: "Omdat bijna niemand anders kon schrijven, waren monniken onmisbaar voor het bestuur." },
+    { v: "Wie is de beschermheilige van de stad Utrecht?", o: ["Bonifatius", "Willibrord", "Karel de Grote", "Petrus"], c: 1, u: "Willibrord werd de eerste bisschop van Utrecht." },
+
+    // --- 5.4: De islam ---
+    { v: "Wie wordt beschouwd als de profeet van de islam?", o: ["Abraham", "Mohammed", "Jezus", "Mozes"], c: 1, u: "Mohammed kreeg volgens de islam vanaf 610 boodschappen van God door." },
+    { v: "Hoe noemen we het heilige boek van de moslims?", o: ["Bijbel", "Thora", "Koran", "Domesday Book"], c: 2, u: "De Koran bevat de woorden van Allah (God)." },
+    { v: "In welke stad werd Mohammed geboren?", o: ["Medina", "Mekka", "Jeruzalem", "Bagdad"], c: 1, u: "Mekka is nog steeds de belangrijkste heilige stad voor moslims." },
+    { v: "Wat betekent het woord 'islam'?", o: ["Strijd", "Onderwerping (aan God)", "Vrede", "Geluk"], c: 1, u: "Het draait om de overgave aan de wil van Allah." },
+    { v: "Wat is de 'Hadj'?", o: ["Het vasten tijdens de ramadan", "De bedevaart naar Mekka", "Het bidden vijf keer per dag", "Het geloof in één God"], c: 1, u: "Dit is een van de vijf zuilen (verplichtingen) van de islam." },
+    { v: "Hoe noemen we de opvolgers van Mohammed?", o: ["Sjeiks", "Kaliefen", "Farao's", "Bisschoppen"], c: 1, u: "Een kalief was zowel een politiek als religieus leider." },
+    { v: "In welk land werd de islamitische opmars in 732 gestopt?", o: ["Spanje", "Frankrijk (Slag bij Poitiers)", "Italië", "Griekenland"], c: 1, u: "Karel Martel versloeg de moslims, waardoor ze niet verder Europa in trokken." },
+    { v: "Waarom verspreidde de islam zich zo snel?", o: ["Door handel en veroveringen", "Omdat iedereen direct christen wilde worden", "Omdat er geen andere godsdiensten waren", "Door internet"], c: 0, u: "De Arabieren waren sterke ruiters en veroverden in korte tijd een enorm rijk." },
+    { v: "Wat is een moskee?", o: ["Een markt", "Een islamitisch gebedshuis", "Een school", "Een paleis"], c: 1, u: "Moslims komen hier samen om te bidden." },
+    { v: "Welk deel van Europa bleef eeuwenlang onder islamitisch bestuur?", o: ["Engeland", "Spanje en Portugal", "Noorwegen", "Duitsland"], c: 1, u: "Dit gebied werd Al-Andalus genoemd en was een centrum van cultuur." }
+];
+
+let state = { currentIdx: 0, score: 0, answered: false };
+function $(id) { return document.getElementById(id); }
+
+function startGame() {
+    state = { currentIdx: 0, score: 0, answered: false };
+    $('screen-home').classList.remove('active');
+    $('screen-game').classList.add('active');
+    showQuestion();
+}
+
+function showQuestion() {
+    state.answered = false;
+    const q = questions[state.currentIdx];
+    $('q-info').innerText = "VRAAG " + (state.currentIdx + 1) + " / 40";
+    $('q-text').innerText = q.v;
+    $('explanation-box').innerText = q.u;
+    $('feedback-area').style.display = 'none';
+    const list = $('options-list');
+    list.innerHTML = '';
+    q.o.forEach((opt, i) => {
+        const div = document.createElement('div');
+        div.className = 'opt';
+        div.innerText = opt;
+        div.onclick = () => check(i, div);
+        list.appendChild(div);
+    });
+    $('progress-fill').style.width = ((state.currentIdx + 1) / 40 * 100) + '%';
+}
+
+function check(idx, el) {
+    if (state.answered) return;
+    state.answered = true;
+    const correct = questions[state.currentIdx].c;
+    if (idx === correct) {
+        el.classList.add('correct');
+        state.score++;
+    } else {
+        el.classList.add('wrong');
+        $('options-list').children[correct].classList.add('correct');
+    }
+    $('feedback-area').style.display = 'block';
+}
+
+$('next-btn').onclick = () => {
+    state.currentIdx++;
+    if (state.currentIdx < questions.length) {
+        showQuestion();
+    } else {
+        showResult();
+    }
+};
+
+function showResult() {
+    $('screen-game').classList.remove('active');
+    document.body.innerHTML = `<div class="screen active" style="justify-content:center; text-align:center;">
+        <h1 style="font-family:'Fredoka One'; font-size:3rem; color:#4ade80;">FINISH!</h1>
+        <div style="background:rgba(255,255,255,0.1); padding:30px; border-radius:24px; margin:20px;">
+            <p style="font-size:1.2rem;">Jouw resultaat:</p>
+            <h2 style="font-size:4rem; color:#fbbf24;">${Math.round(state.score/40*100)}%</h2>
+            <p>${state.score} van de 40 vragen goed</p>
+        </div>
+        <button class="btn" onclick="location.reload()">OPNIEUW</button>
+    </div>`;
+}
+</script>
+</body>
+</html>
