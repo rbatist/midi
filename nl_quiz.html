@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Talent 1 — Quiz Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: #1a0533;
+  color: #fff;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== CANVAS ===== */
+#confetti-canvas {
+  position: fixed; inset: 0; pointer-events: none; z-index: 999;
+}
+
+/* ===== SCREENS ===== */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateX(30px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.screen.active {
+  opacity: 1; pointer-events: all; transform: translateX(0);
+}
+.screen.exit {
+  opacity: 0; transform: translateX(-30px);
+}
+
+/* ===== HOME SCREEN ===== */
+.home-bg {
+  position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
+}
+.star {
+  position: absolute; font-size: 40px; animation: float 4s ease-in-out infinite;
+  opacity: 0.15;
+}
+.s1 { top: 8%; left: 5%; animation-delay: 0s; }
+.s2 { top: 15%; right: 8%; animation-delay: 1s; }
+.s3 { bottom: 30%; left: 10%; animation-delay: 2s; }
+.s4 { bottom: 15%; right: 12%; animation-delay: 0.5s; }
+@keyframes float {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-18px) rotate(12deg); }
+}
+
+.home-content {
+  position: relative; z-index: 1; width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; align-items: center; padding-top: 24px;
+  gap: 16px;
+}
+
+.logo-badge {
+  background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+  color: #1a0533; font-family: 'Fredoka One', cursive;
+  font-size: 13px; letter-spacing: 3px; font-weight: 400;
+  padding: 5px 18px; border-radius: 99px;
+  box-shadow: 0 4px 20px rgba(255,107,107,0.5);
+}
+
+.game-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 68px; line-height: 0.9;
+  text-align: center; font-weight: 400;
+  text-shadow: 0 4px 30px rgba(255,217,61,0.4);
+  color: #fff;
+}
+.game-title span {
+  background: linear-gradient(135deg, #ffd93d, #ff6b6b);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.game-sub {
+  font-size: 14px; color: rgba(255,255,255,0.5); letter-spacing: 1px;
+}
+
+.highscore-display {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 16px; padding: 10px 22px;
+  font-size: 14px; color: rgba(255,255,255,0.7);
+  display: flex; align-items: center; gap: 8px;
+}
+.hs-icon { font-size: 18px; }
+
+/* Difficulty picker */
+.difficulty-picker { width: 100%; }
+.diff-label { font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; text-align: center; }
+.diff-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+.diff-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 14px; color: rgba(255,255,255,0.6);
+  font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700;
+  padding: 10px 4px; cursor: pointer; transition: all 0.2s; line-height: 1.3;
+}
+.diff-btn small { font-size: 10px; font-weight: 400; display: block; opacity: 0.7; }
+.diff-btn.active {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border-color: #a855f7; color: #fff;
+  box-shadow: 0 4px 16px rgba(168,85,247,0.5);
+}
+.diff-btn:active { transform: scale(0.95); }
+
+/* Start button */
+.btn-start {
+  width: 100%; padding: 18px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%);
+  border: none; border-radius: 20px;
+  font-family: 'Fredoka One', cursive; font-size: 26px;
+  color: #1a0533; cursor: pointer; position: relative; overflow: hidden;
+  box-shadow: 0 8px 30px rgba(255,107,107,0.5);
+  transition: transform 0.15s, box-shadow 0.15s;
+  letter-spacing: 1px;
+}
+.btn-start:active { transform: scale(0.97); box-shadow: 0 4px 16px rgba(255,107,107,0.4); }
+.btn-shine {
+  position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shine 2.5s infinite;
+}
+@keyframes shine { 0% { left: -100%; } 60%,100% { left: 150%; } }
+
+.btn-scores {
+  background: none; border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 14px; color: rgba(255,255,255,0.5); font-family: 'Nunito', sans-serif;
+  font-size: 14px; font-weight: 600; padding: 10px 24px; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-scores:active { background: rgba(255,255,255,0.1); }
+
+/* ===== COUNTDOWN ===== */
+#screen-countdown { background: #1a0533; justify-content: center; }
+.countdown-wrap { text-align: center; }
+.countdown-num {
+  font-family: 'Fredoka One', cursive; font-size: 140px; line-height: 1;
+  background: linear-gradient(135deg, #ffd93d, #ff6b6b);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: countPop 0.4s ease-out;
+}
+@keyframes countPop {
+  0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  70% { transform: scale(1.15) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.countdown-label {
+  font-size: 18px; color: rgba(255,255,255,0.5); margin-top: 12px;
+}
+
+/* ===== GAME SCREEN ===== */
+#screen-game {
+  background: linear-gradient(160deg, #1a0533 0%, #0f172a 100%);
+  justify-content: flex-start; gap: 10px;
+  padding-top: max(env(safe-area-inset-top), 16px);
+}
+
+.game-header {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; max-width: 420px;
+}
+.streak-badge {
+  background: rgba(255,107,107,0.2); border: 1px solid rgba(255,107,107,0.4);
+  border-radius: 99px; padding: 5px 12px;
+  display: flex; align-items: center; gap: 4px;
+  font-family: 'Fredoka One', cursive; font-size: 16px; color: #ff6b6b;
+  transition: transform 0.2s;
+}
+.streak-badge.bump { animation: bump 0.3s; }
+@keyframes bump { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+.streak-fire { font-size: 16px; }
+
+.q-counter {
+  text-align: center; font-size: 13px;
+  color: rgba(255,255,255,0.5); font-weight: 700; margin-bottom: 4px;
+}
+.progress-track {
+  width: 120px; height: 6px; background: rgba(255,255,255,0.1);
+  border-radius: 99px; overflow: hidden;
+}
+.progress-bar {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, #a855f7, #ffd93d);
+  border-radius: 99px; transition: width 0.5s ease;
+}
+
+.score-pill {
+  background: rgba(255,217,61,0.15); border: 1px solid rgba(255,217,61,0.3);
+  border-radius: 99px; padding: 5px 12px;
+  display: flex; align-items: center; gap: 4px;
+  font-family: 'Fredoka One', cursive; font-size: 16px; color: #ffd93d;
+}
+.score-icon { font-size: 14px; }
+
+/* Timer */
+.timer-container {
+  position: relative; width: 90px; height: 90px;
+  flex-shrink: 0; align-self: center;
+}
+.timer-svg { width: 90px; height: 90px; transform: rotate(-90deg); }
+.timer-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 8; }
+.timer-fill {
+  fill: none; stroke: #a855f7; stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 327; stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear, stroke 0.5s;
+}
+.timer-fill.warn { stroke: #ff6b6b; }
+.timer-text {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Fredoka One', cursive; font-size: 26px; color: #fff;
+}
+
+/* Question card */
+.question-card {
+  width: 100%; max-width: 420px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 22px; padding: 16px 18px;
+  flex-shrink: 0;
+}
+.q-hoofdstuk {
+  display: inline-block;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  padding: 3px 10px; border-radius: 99px; margin-bottom: 4px;
+}
+.q-category {
+  font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.q-text {
+  font-size: 17px; font-weight: 700; line-height: 1.4; color: #fff;
+}
+
+/* Answers */
+.answers-grid {
+  width: 100%; max-width: 420px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  flex-shrink: 0;
+}
+.answer-btn {
+  padding: 14px 12px;
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 16px; color: #fff;
+  font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; line-height: 1.3; transition: all 0.15s;
+  min-height: 60px; display: flex; align-items: center; justify-content: center;
+  text-align: center;
+}
+.answer-btn:active:not(:disabled) { transform: scale(0.96); }
+.answer-btn.correct {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-color: #22c55e;
+  box-shadow: 0 0 24px rgba(34,197,94,0.5);
+  animation: correctPop 0.4s ease;
+}
+.answer-btn.wrong {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  border-color: #ef4444;
+  box-shadow: 0 0 20px rgba(239,68,68,0.4);
+  animation: shake 0.4s ease;
+}
+.answer-btn.reveal {
+  background: rgba(34,197,94,0.15);
+  border-color: rgba(34,197,94,0.4);
+}
+.answer-btn:disabled { cursor: default; }
+@keyframes correctPop {
+  0%{transform:scale(1)} 40%{transform:scale(1.08)} 100%{transform:scale(1)}
+}
+@keyframes shake {
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)}
+}
+
+/* Bonus bar */
+.bonus-bar {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 99px; padding: 6px 18px;
+  font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.5);
+  text-align: center; align-self: center;
+  transition: all 0.3s;
+}
+.bonus-bar.active {
+  background: rgba(255,217,61,0.15);
+  border-color: rgba(255,217,61,0.4);
+  color: #ffd93d;
+}
+
+/* ===== FEEDBACK SCREEN ===== */
+#screen-feedback {
+  background: rgba(26, 5, 51, 0.97);
+  justify-content: center; gap: 12px;
+  backdrop-filter: blur(20px);
+}
+.feedback-wrap {
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 20px;
+}
+.feedback-emoji { font-size: 72px; animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes popIn {
+  0% { transform: scale(0) rotate(-20deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.feedback-title {
+  font-family: 'Fredoka One', cursive; font-size: 40px; text-align: center;
+}
+.feedback-title.good { color: #4ade80; }
+.feedback-title.bad { color: #f87171; }
+.feedback-pts {
+  font-family: 'Fredoka One', cursive; font-size: 26px; color: #ffd93d;
+  opacity: 0; animation: fadeUp 0.4s 0.2s ease forwards;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.feedback-explanation {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 14px 16px;
+  font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.8);
+  max-width: 100%; width: 100%;
+}
+.feedback-answer {
+  font-size: 13px; color: rgba(255,255,255,0.4); font-style: italic;
+}
+.btn-next {
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border: none; border-radius: 18px;
+  font-family: 'Fredoka One', cursive; font-size: 22px; color: #fff;
+  cursor: pointer; box-shadow: 0 6px 24px rgba(168,85,247,0.4);
+  transition: transform 0.15s;
+}
+.btn-next:active { transform: scale(0.97); }
+
+/* ===== RESULT SCREEN ===== */
+#screen-result {
+  background: linear-gradient(160deg, #1a0533 0%, #0f172a 100%);
+  justify-content: flex-start; padding-top: 24px;
+}
+.result-wrap {
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding-bottom: 40px;
+}
+.result-trophy { font-size: 80px; animation: trophyBounce 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes trophyBounce {
+  0%{transform:scale(0) translateY(-40px);opacity:0}
+  100%{transform:scale(1) translateY(0);opacity:1}
+}
+.result-title {
+  font-family: 'Fredoka One', cursive; font-size: 36px; text-align: center;
+  color: #ffd93d;
+}
+.result-score-big {
+  font-family: 'Fredoka One', cursive; font-size: 80px; line-height: 1;
+  background: linear-gradient(135deg, #ffd93d, #ff6b6b);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.result-sub { font-size: 14px; color: rgba(255,255,255,0.4); letter-spacing: 2px; margin-top: -8px; }
+
+.result-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%;
+}
+.stat-box {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 12px 6px; text-align: center;
+}
+.stat-num { font-family: 'Fredoka One', cursive; font-size: 24px; color: #a855f7; }
+.stat-lbl { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; letter-spacing: 0.5px; }
+
+.new-record {
+  background: linear-gradient(135deg, #ffd93d, #ff6b6b);
+  color: #1a0533; font-family: 'Fredoka One', cursive; font-size: 20px;
+  padding: 10px 28px; border-radius: 99px;
+  box-shadow: 0 6px 24px rgba(255,217,61,0.5);
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%,100%{transform:scale(1)} 50%{transform:scale(1.05)}
+}
+
+.result-btns { display: flex; gap: 10px; width: 100%; }
+.btn-play-again {
+  flex: 1; padding: 14px;
+  background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 16px; color: #fff;
+  font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-play-again.btn-retry {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border-color: #a855f7;
+  box-shadow: 0 4px 16px rgba(168,85,247,0.4);
+}
+.btn-play-again:active { transform: scale(0.96); }
+
+.wrong-list { width: 100%; }
+.wrong-list-title {
+  font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 10px; text-align: center;
+}
+.wrong-item {
+  background: rgba(255,68,68,0.07); border: 1px solid rgba(255,68,68,0.15);
+  border-radius: 14px; padding: 12px 14px; margin-bottom: 8px;
+}
+.wrong-item-q { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.8); margin-bottom: 6px; }
+.wrong-item-a { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 2px; }
+.wrong-item-a span.correct-ans { color: #4ade80; font-weight: 700; }
+.wrong-item-expl { font-size: 12px; color: rgba(255,255,255,0.4); font-style: italic; line-height: 1.5; }
+
+/* ===== SCOREBOARD ===== */
+#screen-scores {
+  background: linear-gradient(160deg, #1a0533 0%, #0f172a 100%);
+  justify-content: flex-start; padding-top: 24px; gap: 16px;
+}
+.scores-wrap { width: 100%; max-width: 400px; }
+.btn-back {
+  background: none; border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 12px; color: rgba(255,255,255,0.6);
+  font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
+  padding: 8px 18px; cursor: pointer; margin-bottom: 12px;
+}
+.scores-title {
+  font-family: 'Fredoka One', cursive; font-size: 32px; color: #ffd93d;
+  text-align: center; margin-bottom: 16px;
+}
+.scores-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.score-entry {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 12px 16px;
+}
+.score-rank {
+  font-family: 'Fredoka One', cursive; font-size: 22px;
+  width: 32px; text-align: center;
+}
+.score-info { flex: 1; }
+.score-pts { font-family: 'Fredoka One', cursive; font-size: 20px; color: #ffd93d; }
+.score-meta { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.score-entry:nth-child(1) .score-rank { color: #ffd93d; }
+.score-entry:nth-child(2) .score-rank { color: #c0c0c0; }
+.score-entry:nth-child(3) .score-rank { color: #cd7f32; }
+.no-scores { text-align: center; color: rgba(255,255,255,0.3); font-size: 15px; padding: 40px; }
+.btn-clear-scores {
+  width: 100%; background: none; border: 1px solid rgba(255,68,68,0.3);
+  border-radius: 12px; color: rgba(255,68,68,0.5);
+  font-family: 'Nunito', sans-serif; font-size: 13px; padding: 10px; cursor: pointer;
+}
+
+/* ===== FLOATING SCORE POPUP ===== */
+.score-popup {
+  position: fixed; font-family: 'Fredoka One', cursive;
+  font-size: 28px; color: #ffd93d; pointer-events: none; z-index: 100;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  animation: floatUp 1s ease forwards;
+}
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
+}
+
+/* Scrollbar hide */
+::-webkit-scrollbar { display: none; }
+
+</style>
+</head>
+<body>
+
+<!-- CONFETTI CANVAS -->
+<canvas id="confetti-canvas"></canvas>
+
+<!-- SCREEN: HOME -->
+<div id="screen-home" class="screen active">
+  <div class="home-bg">
+    <div class="star s1">⭐</div>
+    <div class="star s2">🌟</div>
+    <div class="star s3">✨</div>
+    <div class="star s4">⭐</div>
+  </div>
+  <div class="home-content">
+    <div class="logo-badge">TALENT 1</div>
+    <h1 class="game-title">Quiz<br><span>Master</span></h1>
+    <p class="game-sub">Havo / VWO &nbsp;·&nbsp; H1.7 – H3.9</p>
+    <div class="highscore-display" id="home-highscore">
+      <span class="hs-icon">🏆</span>
+      <span id="hs-text">Nog geen highscore</span>
+    </div>
+    <div class="difficulty-picker">
+      <div class="diff-label">Moeilijkheid</div>
+      <div class="diff-btns">
+        <button class="diff-btn active" data-diff="10">Makkelijk<br><small>10 vr</small></button>
+        <button class="diff-btn" data-diff="20">Normaal<br><small>20 vr</small></button>
+        <button class="diff-btn" data-diff="50">Uitdaging<br><small>50 vr</small></button>
+        <button class="diff-btn" data-diff="100">🔥 Alles<br><small>100 vr</small></button>
+      </div>
+    </div>
+    <button class="btn-start" id="btn-start">
+      <span>SPELEN!</span>
+      <div class="btn-shine"></div>
+    </button>
+    <button class="btn-scores" onclick="showScreen('screen-scores')">🏅 Scorebord</button>
+  </div>
+</div>
+
+<!-- SCREEN: COUNTDOWN -->
+<div id="screen-countdown" class="screen">
+  <div class="countdown-wrap">
+    <div id="countdown-num" class="countdown-num">3</div>
+    <div class="countdown-label">Klaar voor de start?</div>
+  </div>
+</div>
+
+<!-- SCREEN: GAME -->
+<div id="screen-game" class="screen">
+  <!-- Header -->
+  <div class="game-header">
+    <div class="hdr-left">
+      <div class="streak-badge" id="streak-badge">
+        <span class="streak-fire">🔥</span>
+        <span id="streak-count">0</span>
+      </div>
+    </div>
+    <div class="hdr-center">
+      <div class="q-counter" id="q-counter">1 / 10</div>
+      <div class="progress-track">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="score-pill" id="score-pill">
+        <span class="score-icon">⭐</span>
+        <span id="live-score">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timer ring -->
+  <div class="timer-container">
+    <svg class="timer-svg" viewBox="0 0 120 120">
+      <circle class="timer-bg" cx="60" cy="60" r="52"/>
+      <circle class="timer-fill" id="timer-fill" cx="60" cy="60" r="52"/>
+    </svg>
+    <div class="timer-text" id="timer-text">15</div>
+  </div>
+
+  <!-- Vraag -->
+  <div class="question-card" id="question-card">
+    <div class="q-hoofdstuk" id="q-hoofdstuk">H 1.7</div>
+    <div class="q-category" id="q-category">Grammatica</div>
+    <div class="q-text" id="q-text">Laadt vraag...</div>
+  </div>
+
+  <!-- Antwoorden -->
+  <div class="answers-grid" id="answers-grid"></div>
+
+  <!-- Bonus multiplier -->
+  <div class="bonus-bar" id="bonus-bar">
+    <span id="bonus-text">⚡ 1× punten</span>
+  </div>
+</div>
+
+<!-- SCREEN: FEEDBACK (tussen vragen) -->
+<div id="screen-feedback" class="screen">
+  <div class="feedback-wrap">
+    <div class="feedback-emoji" id="fb-emoji">✅</div>
+    <div class="feedback-title" id="fb-title">Goed!</div>
+    <div class="feedback-pts" id="fb-pts">+100</div>
+    <div class="feedback-explanation" id="fb-explanation"></div>
+    <div class="feedback-answer" id="fb-answer"></div>
+    <button class="btn-next" id="btn-next">Volgende →</button>
+  </div>
+</div>
+
+<!-- SCREEN: RESULT -->
+<div id="screen-result" class="screen">
+  <div class="result-wrap">
+    <div class="result-trophy" id="result-trophy">🏆</div>
+    <h2 class="result-title" id="result-title">Geweldig!</h2>
+    <div class="result-score-big" id="result-score-big">0</div>
+    <div class="result-sub">punten</div>
+    <div class="result-stats">
+      <div class="stat-box">
+        <div class="stat-num" id="stat-correct">0</div>
+        <div class="stat-lbl">Goed</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-wrong">0</div>
+        <div class="stat-lbl">Fout</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-streak">0</div>
+        <div class="stat-lbl">Max streak</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-pct">0%</div>
+        <div class="stat-lbl">Score</div>
+      </div>
+    </div>
+    <div class="new-record" id="new-record" style="display:none">🎉 NIEUW RECORD!</div>
+    <div class="result-btns">
+      <button class="btn-play-again" onclick="goHome()">🏠 Terug</button>
+      <button class="btn-play-again btn-retry" onclick="restartGame()">🔄 Opnieuw</button>
+    </div>
+    <!-- Foute vragen overzicht -->
+    <div class="wrong-list" id="wrong-list"></div>
+  </div>
+</div>
+
+<!-- SCREEN: SCOREBOARD -->
+<div id="screen-scores" class="screen">
+  <div class="scores-wrap">
+    <button class="btn-back" onclick="goHome()">← Terug</button>
+    <h2 class="scores-title">🏅 Top Scores</h2>
+    <div id="scores-list" class="scores-list"></div>
+    <button class="btn-clear-scores" onclick="clearScores()">Wis scores</button>
+  </div>
+</div>
+
+<script>
+// =============================================
+// TALENT 1 HAVO/VWO — 100 VRAGEN
+// Hoofdstukken 1.7, 1.8, 1.9, 2.7, 2.8, 2.9,
+//              3.7, 3.8, 3.9
+// =============================================
+
+const ALLE_VRAGEN = [
+
+  // ────────────── H 1.7 — Werkwoorden & woordvolgorde ──────────────
+  {
+    h: "1.7", cat: "Werkwoorden",
+    v: "Wat is de stam van het werkwoord 'werken'?",
+    o: ["werk", "werkt", "werken", "gewerkt"], c: 0,
+    u: "De stam maak je door -en van de hele vorm te halen: werken → werk. Je gebruikt de stam voor de ik-vorm: ik werk."
+  },
+  {
+    h: "1.7", cat: "Werkwoorden",
+    v: "Welke vorm hoort bij 'jij' als het onderwerp vóór het werkwoord staat?",
+    o: ["heb", "heeft", "hebben", "hebt"], c: 3,
+    u: "Als 'jij' vóór het werkwoord staat, schrijf je: jij hebt. Staat 'jij' erna (in een vraag), dan verdwijnt de -t: Heb jij...?"
+  },
+  {
+    h: "1.7", cat: "Werkwoorden",
+    v: "Welke zin klopt qua woordvolgorde?",
+    o: ["Morgen ik ga naar school.", "Morgen ga ik naar school.", "Morgen gaan ik naar school.", "Morgen ik gaat naar school."], c: 1,
+    u: "Als een zin niet met het onderwerp begint, draai je het werkwoord en het onderwerp om. 'Morgen' staat vooraan → daarna het werkwoord 'ga', dan pas 'ik'."
+  },
+  {
+    h: "1.7", cat: "Werkwoorden",
+    v: "Wat is de stam van 'lachen'?",
+    o: ["lach", "lacht", "lachen", "gelachen"], c: 0,
+    u: "Lachen → haal -en eraf → stam is 'lach'. Je zegt dus: ik lach (niet: ik lacht)."
+  },
+  {
+    h: "1.7", cat: "Werkwoorden",
+    v: "In welke zin klopt de woordvolgorde NIET?",
+    o: ["Gisteren werkte hij hard.", "Nu werkt zij.", "Vaak speel ik buiten.", "Vanavond ik kook pasta."], c: 3,
+    u: "'Vanavond ik kook' klopt niet. Als 'vanavond' vooraan staat, moet het werkwoord daarna komen: Vanavond kook ik pasta."
+  },
+  {
+    h: "1.7", cat: "Werkwoorden",
+    v: "Welke vorm hoort bij 'wij'?",
+    o: ["werkt", "werk", "werken", "werkte"], c: 2,
+    u: "Bij wij, zij en ze gebruik je de vorm op -en: wij werken, zij werken."
+  },
+  {
+    h: "1.7", cat: "Werkwoorden",
+    v: "Welke vorm past in de vraagzin: '___ jij morgen naar de les?'",
+    o: ["Ga", "Gaat", "Gaan", "Ging"], c: 0,
+    u: "In een vraagzin staat 'jij' ná het werkwoord. Dan verdwijnt de -t van het werkwoord: ga jij? (niet: gaat jij)."
+  },
+  {
+    h: "1.7", cat: "Werkwoorden",
+    v: "Wat is de stam van 'schrijven'?",
+    o: ["schrijf", "schrijft", "schrijven", "schreef"], c: 0,
+    u: "Schrijven → stam: schrijf. Let op: eindigt een werkwoord op -ven, dan wordt de -v een -f in de stam."
+  },
+  {
+    h: "1.7", cat: "Werkwoorden",
+    v: "Welke zin is goed?",
+    o: ["Elke dag loopt hij naar school.", "Elke dag loop hij naar school.", "Elke dag lopen hij naar school.", "Elke dag loopten hij naar school."], c: 0,
+    u: "Bij hij/zij/het schrijf je de stam + t: hij loopt. Elke dag loopt hij naar school. ✓"
+  },
+  {
+    h: "1.7", cat: "Werkwoorden",
+    v: "Wat is de stam van 'leven'?",
+    o: ["leef", "leeft", "leven", "leefde"], c: 0,
+    u: "Leven eindigt op -ven → de -v wordt -f in de stam: leef. Je zegt dus: ik leef."
+  },
+
+  // ────────────── H 1.8 — Verleden tijd ──────────────
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Hoe schrijf je de verleden tijd van 'werken'?",
+    o: ["werkde", "werkte", "gewerkt", "werkten"], c: 1,
+    u: "De stam van werken is 'werk'. De k staat in 't kofschip → je voegt -te toe: werkte."
+  },
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Wat is de verleden tijd van 'rijden'?",
+    o: ["rijdde", "reed", "gereden", "rijtte"], c: 1,
+    u: "Rijden is een onregelmatig werkwoord. Je kunt de verleden tijd niet zelf uitrekenen — je moet hem leren: reed."
+  },
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Welk werkwoord krijgt -de in de verleden tijd?",
+    o: ["koken", "fietsen", "leven", "werken"], c: 2,
+    u: "Leven → stam leef. Die -f kom je van de -v, en v staat niet in 't kofschip → uitgang -de: leefde. Koken/fietsen/werken eindigen op een kofschip-letter → -te."
+  },
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Wat is de verleden tijd van 'kopen'?",
+    o: ["kopte", "koopte", "kocht", "koofte"], c: 2,
+    u: "Kopen is een onregelmatig werkwoord. De verleden tijd is 'kocht' — die moet je leren."
+  },
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Maak de verleden tijd van 'leven' (de stam is: leef):",
+    o: ["leefde", "leeftte", "levende", "leef"], c: 0,
+    u: "De stam 'leef' eindigt op f, maar die f komt van een v. V staat niet in 't kofschip → uitgang -de. Je schrijft: leefde."
+  },
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Wat is de verleden tijd van 'lopen'?",
+    o: ["loopte", "liep", "loopde", "gelopen"], c: 1,
+    u: "Lopen is een onregelmatig werkwoord. De verleden tijd is 'liep' — die moet je leren."
+  },
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Van welk werkwoord kun je de verleden tijd wél zelf maken met een regel?",
+    o: ["rijden", "lopen", "werken", "schrijven"], c: 2,
+    u: "Werken volgt de gewone regel: stam 'werk' eindigt op k (kofschip) → werkte. Rijden, lopen en schrijven zijn onregelmatig."
+  },
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Wat is de verleden tijd van 'fietsen'?",
+    o: ["fietste", "fietsde", "fietsen", "gefietst"], c: 0,
+    u: "Fietsen → stam: fiets. De s staat in 't kofschip → uitgang -te: fietste."
+  },
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Welke letters zitten in 't kofschip?",
+    o: ["t, k, f, s, ch, p", "t, k, f, s, c, h, p", "d, b, v, z, g", "alle medeklinkers"], c: 0,
+    u: "'t Kofschip bevat: t, k, f, s, ch, p. Eindigt de stam op zo'n letter, dan krijg je -te of -ten in de verleden tijd."
+  },
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Wat is de verleden tijd van 'spelen'?",
+    o: ["speelde", "spelde", "speeltte", "speel"], c: 0,
+    u: "Spelen → stam speel. De l staat niet in 't kofschip → uitgang -de: speelde."
+  },
+
+  // ────────────── H 1.9 — Voltooide tijd ──────────────
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Welke zin is correct?",
+    o: ["Ik heb geslapen.", "Ik ben geslapen.", "Ik heb geslapt.", "Ik ben geslapt."], c: 0,
+    u: "Slapen is geen beweging van A naar B → hulpwerkwoord 'hebben'. Het deelwoord is geslapen (onregelmatig). Correct: ik heb geslapen."
+  },
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Welk hulpwerkwoord gebruik je bij 'gaan' in de voltooide tijd?",
+    o: ["hebben", "zijn", "worden", "kunnen"], c: 1,
+    u: "Gaan is een beweging van A naar B → je gebruikt 'zijn' als hulpwerkwoord: ik ben gegaan."
+  },
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Welk voltooid deelwoord is goed geschreven?",
+    o: ["geloopt", "gelopen", "geloopen", "geliep"], c: 1,
+    u: "Lopen is onregelmatig: lopen → liep → gelopen. Je schrijft: ik heb gelopen of ik ben gelopen."
+  },
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Welke zin is correct?",
+    o: ["Hij is naar school gegaan.", "Hij heeft naar school gegaan.", "Hij is naar school geweest gegaan.", "Hij ben naar school gegaan."], c: 0,
+    u: "Gaan = beweging → hulpwerkwoord 'zijn'. Bij 'hij' gebruik je 'is'. Correct: hij is naar school gegaan."
+  },
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Wat is het voltooid deelwoord van 'maken'?",
+    o: ["gemaakt", "gemaakd", "gemaken", "maakte"], c: 0,
+    u: "Maken → stam maak (k staat in 't kofschip) → deelwoord: ge + maak + t = gemaakt."
+  },
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Welke zin klopt?",
+    o: ["Ik heb geschreven.", "Ik heb geschreeft.", "Ik ben geschreven.", "Ik heb schrijft."], c: 0,
+    u: "Schrijven is onregelmatig: schrijven → schreef → geschreven. Het hulpwerkwoord is 'hebben' (geen beweging). Correct: ik heb geschreven."
+  },
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Welk werkwoord gebruikt 'zijn' als hulpwerkwoord?",
+    o: ["slapen", "eten", "fietsen", "werken"], c: 2,
+    u: "Fietsen is een beweging van A naar B → 'zijn': ik ben gefietst. Slapen, eten en werken zijn geen beweging → 'hebben'."
+  },
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Wat is het voltooid deelwoord van 'leven'?",
+    o: ["geleefd", "geleeft", "geleven", "leefde"], c: 0,
+    u: "Leven → stam leef → deelwoord: ge + leef + d = geleefd. (De -d omdat v niet in 't kofschip staat.)"
+  },
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Welke zin is FOUT?",
+    o: ["Zij hebben gegeten.", "Wij zijn gelopen.", "Hij heeft gefietst.", "Ik ben gegeten."], c: 3,
+    u: "'Ik ben gegeten' klopt niet. Eten is geen beweging → hulpwerkwoord 'hebben'. Correct: ik heb gegeten."
+  },
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Wat is het voltooid deelwoord van 'kopen'?",
+    o: ["gekopt", "gekopen", "gekocht", "koopte"], c: 2,
+    u: "Kopen is onregelmatig: kopen → kocht → gekocht. Dit moet je uit je hoofd leren."
+  },
+
+  // ────────────── H 2.7 — Bijvoeglijke naamwoorden ──────────────
+  {
+    h: "2.7", cat: "Bijvoeglijke naamwoorden",
+    v: "Vul in: 'een ___ huis' — huis is een het-woord (gebruik: groot)",
+    o: ["groot", "grote", "groten", "grootte"], c: 0,
+    u: "Na 'een' + een het-woord schrijf je het bijvoeglijk naamwoord zónder -e: een groot huis. Bij de-woorden wél -e: een grote tafel."
+  },
+  {
+    h: "2.7", cat: "Bijvoeglijke naamwoorden",
+    v: "In welke zin beschrijft het woord 'rode' hoe de auto eruitziet?",
+    o: ["Hij loopt snel.", "De rode auto staat voor het huis.", "Zij zingt luid.", "Wij fietsen elke dag."], c: 1,
+    u: "'Rode' staat vóór het zelfstandig naamwoord 'auto' en zegt iets over hoe de auto eruitziet. 'Snel' en 'luid' zeggen iets over de manier van lopen of zingen."
+  },
+  {
+    h: "2.7", cat: "Bijvoeglijke naamwoorden",
+    v: "Vul in: 'De ___ kat slaapt.' (zwart)",
+    o: ["zwart", "zwarte", "zwarten", "zwarts"], c: 1,
+    u: "Na 'de' + zelfstandig naamwoord schrijf je het bijvoeglijk naamwoord mét -e: de zwarte kat."
+  },
+  {
+    h: "2.7", cat: "Bijvoeglijke naamwoorden",
+    v: "Welke zin is FOUT?",
+    o: ["Een klein kind speelt.", "Het kleine kind speelt.", "De kleine hond blafte.", "Een kleins kind speelt."], c: 3,
+    u: "'Een kleins kind' bestaat niet in het Nederlands. Na 'een' + het-woord schrijf je: een klein kind."
+  },
+  {
+    h: "2.7", cat: "Bijvoeglijke naamwoorden",
+    v: "Vul in: 'een ___ boek' (interessant) — boek is een het-woord",
+    o: ["interessant", "interessante", "interessants", "interessanten"], c: 0,
+    u: "Na 'een' + het-woord: geen -e uitgang. Een interessant boek. (Maar: het interessante boek → na 'het' wél -e.)"
+  },
+  {
+    h: "2.7", cat: "Bijvoeglijke naamwoorden",
+    v: "Wanneer schrijf je een bijvoeglijk naamwoord ZONDER -e?",
+    o: ["Na 'de'", "Na 'het' als bepaald lidwoord", "Na 'een' + een het-woord", "Na 'dit'"], c: 2,
+    u: "De uitzondering is: 'een' + het-woord → geen -e. Voorbeeld: een groot huis. In alle andere gevallen schrijf je wél -e."
+  },
+  {
+    h: "2.7", cat: "Bijvoeglijke naamwoorden",
+    v: "Vul in: 'Het ___ meisje lacht.' (vrolijk) — meisje is een het-woord",
+    o: ["vrolijk", "vrolijke", "vrolijks", "vrolijken"], c: 1,
+    u: "Na 'het' (bepaald lidwoord) + het-woord schrijf je wél -e: het vrolijke meisje."
+  },
+  {
+    h: "2.7", cat: "Bijvoeglijke naamwoorden",
+    v: "Welke zin heeft een FOUT?",
+    o: ["het grote huis", "een grote man", "een grote vrouw", "een grote kind"], c: 3,
+    u: "'Een grote kind' is fout. Kind is een het-woord en staat na 'een' → geen -e: een groot kind."
+  },
+  {
+    h: "2.7", cat: "Bijvoeglijke naamwoorden",
+    v: "Vul in: 'de ___ kinderen spelen' (gelukkig)",
+    o: ["gelukkig", "gelukkige", "gelukige", "gelukkigs"], c: 1,
+    u: "Bij meervoud schrijf je altijd -e: de gelukkige kinderen. Let ook op de spelling: gelukkig heeft kk."
+  },
+  {
+    h: "2.7", cat: "Bijvoeglijke naamwoorden",
+    v: "In welke zin staat het bijvoeglijk naamwoord ná het werkwoord en krijgt het géén -e?",
+    o: ["De warme koffie staat op tafel.", "De koffie is warm.", "Ik drink warme koffie.", "Een warme drank smaakt lekker."], c: 1,
+    u: "In 'De koffie is warm' staat 'warm' ná het werkwoord 'is'. In die positie schrijf je het bijvoeglijk naamwoord zonder -e."
+  },
+
+  // ────────────── H 2.8 — Trappen van vergelijking ──────────────
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Hoe zeg je dat iets 'meer mooi' is dan iets anders?",
+    o: ["mooier", "mooiste", "meer mooi", "mooierd"], c: 0,
+    u: "Om twee dingen te vergelijken voeg je -er toe: mooi → mooier. Ik vind deze jurk mooier dan die."
+  },
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Welke zin klopt?",
+    o: ["Dit is het grootst gebouw.", "Dit is de grootste gebouw.", "Dit is het grootste gebouw.", "Dit is het meest grote gebouw."], c: 2,
+    u: "De hoogste trap van groot is 'grootste'. Bij het-woord gebruik je 'het': het grootste gebouw."
+  },
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Hoe zeg je dat iets het meest snel is van allemaal?",
+    o: ["sneller", "snelst", "snelste", "meest snel"], c: 2,
+    u: "De hoogste trap maak je met -(s)te: snel → snelste. Ik heb de snelste auto van de klas."
+  },
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Welk woord vergelijkt twee dingen met elkaar?",
+    o: ["het best", "groter", "het kleinste", "allermooist"], c: 1,
+    u: "'Groter' vergelijkt twee dingen: deze boom is groter dan die boom. 'Het best' en 'het kleinste' zijn de hoogste trap."
+  },
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Hoe vergelijk je 'goed' — wat is de vergelijkingsvorm?",
+    o: ["goeier", "goeder", "beter", "best"], c: 2,
+    u: "Goed is onregelmatig: goed → beter → best. Dit moet je uit je hoofd leren."
+  },
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Welke zin klopt?",
+    o: ["Hij is meer slim dan zijn broer.", "Hij is slimmer dan zijn broer.", "Hij is het slimst.", "Hij is slimmers dan zijn broer."], c: 1,
+    u: "Slim + -mer = slimmer (dubbele m bij korte klinker). Correct: hij is slimmer dan zijn broer."
+  },
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Hoe vergelijk je 'weinig'?",
+    o: ["wenigier", "minder", "minst", "weiniger"], c: 1,
+    u: "Weinig is onregelmatig: weinig → minder → minst. Ik heb minder tijd dan jij."
+  },
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Hoe schrijf je de vergelijkingsvorm van 'laat'?",
+    o: ["later", "laatter", "laat", "laters"], c: 0,
+    u: "Laat → later. Lange klinker (aa) → geen verdubbeling van de medeklinker: later (niet laatter)."
+  },
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Bij welk woord gebruik je 'meer/meest' in plaats van -er/-ste?",
+    o: ["mooi", "snel", "interessant", "groot"], c: 2,
+    u: "Lange woorden zoals 'interessant' gebruik je met 'meer' en 'meest': meer interessant / het meest interessant."
+  },
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Hoe zeg je dat je iets het liefste doet?",
+    o: ["graager", "graaagst", "liefst", "het graagst"], c: 2,
+    u: "Graag is onregelmatig: graag → liever → liefst. Ik speel het liefst voetbal."
+  },
+
+  // ────────────── H 2.9 — Voornaamwoorden ──────────────
+  {
+    h: "2.9", cat: "Voornaamwoorden",
+    v: "Welk woord geeft aan van wie iets is?",
+    o: ["mij", "hij", "zijn", "hem"], c: 2,
+    u: "'Zijn' geeft aan van wie iets is: zijn boek = het boek van hem. 'Hem' en 'mij' gebruik je als lijdend voorwerp."
+  },
+  {
+    h: "2.9", cat: "Voornaamwoorden",
+    v: "Welk woord past als onderwerp in: '___ en ik gaan zwemmen.'",
+    o: ["Hem", "Mij", "Zij", "Haar"], c: 2,
+    u: "Als onderwerp van de zin gebruik je: zij. 'Zij en ik gaan zwemmen.' 'Haar' gebruik je na een werkwoord of voorzetsel."
+  },
+  {
+    h: "2.9", cat: "Voornaamwoorden",
+    v: "Welk woord past in: 'Ik geef het boek aan ___.'",
+    o: ["hij", "zij", "hem", "jij"], c: 2,
+    u: "Na het voorzetsel 'aan' gebruik je: hem (niet: hij). Ik geef het boek aan hem."
+  },
+  {
+    h: "2.9", cat: "Voornaamwoorden",
+    v: "Hoe zeg je dat iets van 'wij' is — bij een het-woord?",
+    o: ["ons", "onze", "wij", "we"], c: 0,
+    u: "Bij het-woorden gebruik je 'ons': ons huis. Bij de-woorden en meervoud gebruik je 'onze': onze auto."
+  },
+  {
+    h: "2.9", cat: "Voornaamwoorden",
+    v: "Welke zin is FOUT?",
+    o: ["Dat is haar boek.", "Dat is zijn tas.", "Dat is heur jas.", "Dat is jullie huis."], c: 2,
+    u: "'Heur' bestaat niet in het Nederlands. De goede vormen zijn: haar (voor vrouwelijk) en zijn (voor mannelijk)."
+  },
+  {
+    h: "2.9", cat: "Voornaamwoorden",
+    v: "Vul in: 'Ik zie ___.' (hij)",
+    o: ["hij", "hem", "zijn", "zich"], c: 1,
+    u: "Na het werkwoord gebruik je: hem (niet: hij). Ik zie hem. 'Hij' gebruik je alleen als onderwerp vóór het werkwoord."
+  },
+  {
+    h: "2.9", cat: "Voornaamwoorden",
+    v: "Welk woord gebruik je in: 'Zij wassen ___.' (zijzelf)?",
+    o: ["haar", "hen", "zich", "zichzelf"], c: 2,
+    u: "Als de handeling terugslaat op henzelf gebruik je 'zich': zij wassen zich."
+  },
+  {
+    h: "2.9", cat: "Voornaamwoorden",
+    v: "Wanneer gebruik je 'hem' en wanneer 'zijn'?",
+    o: ["Ze betekenen hetzelfde", "'Hem' gebruik je na een werkwoord; 'zijn' als iets van iemand is", "'Zijn' gebruik je na een werkwoord", "'Hem' staat altijd vooraan de zin"], c: 1,
+    u: "'Hem' gebruik je na een werkwoord of voorzetsel: ik zie hem. 'Zijn' gebruik je als iets van iemand is: zijn fiets."
+  },
+  {
+    h: "2.9", cat: "Voornaamwoorden",
+    v: "Vul in: 'Dat is ___ jas.' — de jas is van ons (de-woord)",
+    o: ["ons", "onze", "wij", "we"], c: 1,
+    u: "Bij de-woorden gebruik je 'onze': onze jas. Bij het-woorden gebruik je 'ons': ons huis."
+  },
+  {
+    h: "2.9", cat: "Voornaamwoorden",
+    v: "Welk woord gebruik je om iets dichtbij aan te wijzen?",
+    o: ["zijn", "hem", "dit", "zich"], c: 2,
+    u: "'Dit' wijs je iets aan dat dichtbij is. 'Dat' voor iets dat verder weg is. 'Deze' en 'die' gebruik je bij de-woorden."
+  },
+
+  // ────────────── H 3.7 — Woordvorming ──────────────
+  {
+    h: "3.7", cat: "Woordvorming",
+    v: "Wat betekent 'on-' in het woord 'ongelukkig'?",
+    o: ["heel erg", "niet / het tegendeel", "een beetje", "opnieuw"], c: 1,
+    u: "'On-' betekent het tegendeel: gelukkig → ongelukkig (= niet gelukkig). Meer voorbeelden: mogelijk → onmogelijk, eerlijk → oneerlijk."
+  },
+  {
+    h: "3.7", cat: "Woordvorming",
+    v: "Welke woorden horen allemaal bij de stam van 'schrijven'?",
+    o: ["schrijver", "geschreven", "schrijfster", "alle drie"], c: 3,
+    u: "Schrijver, geschreven en schrijfster komen allemaal van dezelfde stam: schrijf-. Ze horen bij dezelfde woordfamilie."
+  },
+  {
+    h: "3.7", cat: "Woordvorming",
+    v: "Welk woord is gemaakt door twee woorden samen te voegen?",
+    o: ["onmogelijk", "vriendelijk", "schooltas", "snelheid"], c: 2,
+    u: "'Schooltas' is gemaakt van school + tas. 'Onmogelijk' en 'vriendelijk' zijn gemaakt door iets voor of achter een woord te plakken."
+  },
+  {
+    h: "3.7", cat: "Woordvorming",
+    v: "Van welke twee woorden is 'voetbalveld' gemaakt?",
+    o: ["voet + balveld", "voetbal + veld", "voet + bal + veld", "voetbal + vel + d"], c: 1,
+    u: "Voetbalveld = voetbal + veld. Het hoofdwoord is 'veld', 'voetbal' zegt wat voor veld het is."
+  },
+  {
+    h: "3.7", cat: "Woordvorming",
+    v: "Welk woord heeft een stukje aan het begin dat de betekenis verandert?",
+    o: ["schoolboek", "onmogelijk", "fietspad", "leeshoek"], c: 1,
+    u: "'Onmogelijk' heeft 'on-' aan het begin. Dat stukje draait de betekenis om: mogelijk → onmogelijk."
+  },
+  {
+    h: "3.7", cat: "Woordvorming",
+    v: "Wat betekent 'her-' in 'herschrijven'?",
+    o: ["opnieuw / nog een keer", "niet meer", "heel erg", "samen"], c: 0,
+    u: "'Her-' betekent opnieuw: herschrijven = nog een keer schrijven. Meer voorbeelden: herbouwen = opnieuw bouwen."
+  },
+  {
+    h: "3.7", cat: "Woordvorming",
+    v: "Wat is er toegevoegd aan 'vriend' om 'vriendelijk' te maken?",
+    o: ["een stukje aan het begin", "een stukje aan het einde (-elijk)", "een ander woord", "niets, ze betekenen hetzelfde"], c: 1,
+    u: "Aan 'vriend' is -elijk toegevoegd achteraan: vriend + -elijk = vriendelijk."
+  },
+  {
+    h: "3.7", cat: "Woordvorming",
+    v: "Welk woord hoort NIET bij de woordfamilie van 'spelen'?",
+    o: ["speler", "speelgoed", "gespeeld", "spijt"], c: 3,
+    u: "'Spijt' heeft niets met spelen te maken. Speler, speelgoed en gespeeld komen allemaal van de stam 'speel-' of 'spel-'."
+  },
+  {
+    h: "3.7", cat: "Woordvorming",
+    v: "Hoe noem je woorden die van dezelfde stam komen?",
+    o: ["synoniemen", "woordfamilie", "samenstellingen", "vervoegingen"], c: 1,
+    u: "Woorden die van dezelfde stam komen noem je een woordfamilie: schrijven, schrijver, geschreven zijn allemaal familie van elkaar."
+  },
+  {
+    h: "3.7", cat: "Woordvorming",
+    v: "Welk woord is gemaakt van twee losse woorden?",
+    o: ["onmogelijk", "vriendelijkheid", "fietspad", "snelheid"], c: 2,
+    u: "'Fietspad' is gemaakt van fiets + pad. De andere woorden zijn gemaakt door stukjes voor of achter een woord te plakken."
+  },
+
+  // ────────────── H 3.8 — Werkwoorden met twee delen ──────────────
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "Welke zin klopt met 'opbellen'?",
+    o: ["Ik opbel mijn moeder.", "Ik bel mijn moeder op.", "Ik bellen op mijn moeder.", "Ik mijn moeder opbel."], c: 1,
+    u: "Sommige werkwoorden vallen in een zin in twee stukken uiteen. Het eerste stuk staat op de normale plek, het tweede stuk gaat naar het einde: ik bel ... op."
+  },
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "In welke zin blijft het werkwoord wél in één stuk?",
+    o: ["Hij belt zijn vader op.", "Hij zegt dat hij zijn vader opbelt.", "Bel jij je vader op?", "Zij heeft haar vader opgebeld."], c: 1,
+    u: "Na een woord als 'dat' blijft het werkwoord bij elkaar: ...dat hij zijn vader opbelt. In een gewone zin wordt het gesplitst."
+  },
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "Hoe schrijf je het voltooid deelwoord van 'opbellen'?",
+    o: ["opgeroepen", "opbeld", "opgebeld", "beld op"], c: 2,
+    u: "Bij werkwoorden met twee delen komt ge- tussen de twee stukken: op + ge + beld = opgebeld."
+  },
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "Welk werkwoord valt in een zin uiteen in twee stukken?",
+    o: ["vertellen", "begrijpen", "aankomen", "bezoeken"], c: 2,
+    u: "'Aankomen' valt uiteen: ik kom aan. 'Vertellen', 'begrijpen' en 'bezoeken' blijven altijd bij elkaar."
+  },
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "Welke zin klopt met 'thuiskomen'?",
+    o: ["Ik thuiskom laat.", "Ik kom laat thuis.", "Ik kom thuis laat.", "Ik thuis kom laat."], c: 1,
+    u: "Het tweede stuk 'thuis' gaat naar het einde van de zin: ik kom laat thuis."
+  },
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "Wat is het voltooid deelwoord van 'uitleggen'?",
+    o: ["uitgelegd", "uitlegde", "gelegd uit", "uitleg"], c: 0,
+    u: "Ge- komt tussen de twee stukken: uit + ge + legd = uitgelegd."
+  },
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "Hoe geef je een opdracht met 'opruimen'?",
+    o: ["Ruim op!", "Opruim!", "Ruimen op!", "Ruimt op!"], c: 0,
+    u: "In een opdrachtzin gebruik je de stam + het tweede stuk achteraan: Ruim op!"
+  },
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "Valt het werkwoord uiteen na een woord als 'omdat'?",
+    o: ["Ja, altijd", "Nee, het blijft bij elkaar", "Alleen bij vragen", "Alleen in de verleden tijd"], c: 1,
+    u: "Na 'omdat' (en andere verbindingswoorden) blijft het werkwoord bij elkaar: ...omdat hij vroeg opbelt."
+  },
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "Welk werkwoord blijft ALTIJD bij elkaar in een zin?",
+    o: ["meenemen", "opschrijven", "begrijpen", "thuisblijven"], c: 2,
+    u: "'Begrijpen' valt nooit uiteen. Meenemen, opschrijven en thuisblijven vallen wél uiteen in een zin."
+  },
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "Wat is het voltooid deelwoord van 'afwassen'?",
+    o: ["geafwas", "afgewassen", "gewassen af", "afgewas"], c: 1,
+    u: "Ge- komt tussen de twee stukken: af + ge + wassen = afgewassen."
+  },
+
+  // ────────────── H 3.9 — Zinnen verbinden ──────────────
+  {
+    h: "3.9", cat: "Zinnen verbinden",
+    v: "In welke zin staat het werkwoord achteraan door het verbindingswoord?",
+    o: ["Ik ga naar huis en hij blijft.", "Ik ga naar huis want ik ben moe.", "Ik ga naar huis omdat ik moe ben.", "Ik ga naar huis maar hij niet."], c: 2,
+    u: "Na 'omdat' gaat het werkwoord naar het einde: ...omdat ik moe ben. Na 'en', 'maar' en 'want' blijft de gewone volgorde."
+  },
+  {
+    h: "3.9", cat: "Zinnen verbinden",
+    v: "Waar staat het werkwoord na een woord als 'dat'?",
+    o: ["Aan het begin", "Op de tweede plek", "Aan het einde", "Na het onderwerp"], c: 2,
+    u: "Na 'dat' staat het werkwoord aan het einde: ...dat hij morgen komt."
+  },
+  {
+    h: "3.9", cat: "Zinnen verbinden",
+    v: "Na welk verbindingswoord gaat het werkwoord naar het einde?",
+    o: ["en", "maar", "want", "omdat"], c: 3,
+    u: "Na 'omdat' staat het werkwoord achteraan: ...omdat ik moe ben. Na 'en', 'maar' en 'want' blijft de gewone woordvolgorde."
+  },
+  {
+    h: "3.9", cat: "Zinnen verbinden",
+    v: "Welk stukje zin klopt?",
+    o: ["...dat hij gaat morgen.", "...dat hij morgen gaat.", "...dat gaat hij morgen.", "...morgen dat hij gaat."], c: 1,
+    u: "Na 'dat' staat het werkwoord achteraan: ...dat hij morgen gaat. ✓"
+  },
+  {
+    h: "3.9", cat: "Zinnen verbinden",
+    v: "Welke zin is FOUT?",
+    o: ["Ik weet dat hij ziek is.", "Omdat het regent, blijf ik thuis.", "Hij zegt dat hij morgen komt.", "Ik denk dat hij komt morgen."], c: 3,
+    u: "'Dat hij komt morgen' is fout. Na 'dat' staat het werkwoord achteraan: ...dat hij morgen komt."
+  },
+  {
+    h: "3.9", cat: "Zinnen verbinden",
+    v: "Wat is het verschil tussen 'want' en 'omdat'?",
+    o: ["Ze betekenen hetzelfde", "Na 'want' gewone volgorde; na 'omdat' werkwoord achteraan", "Na 'want' staat werkwoord achteraan", "'Want' is formeler dan 'omdat'"], c: 1,
+    u: "Na 'want' blijft de gewone volgorde: want ik ben moe. Na 'omdat' gaat het werkwoord naar achter: omdat ik moe ben."
+  },
+  {
+    h: "3.9", cat: "Zinnen verbinden",
+    v: "Welke zin begint met een bijzin?",
+    o: ["Hij gaat naar huis omdat hij moe is.", "Omdat hij moe is, gaat hij naar huis.", "Hij is moe en hij gaat naar huis.", "Hij gaat naar huis maar hij is niet moe."], c: 1,
+    u: "In 'Omdat hij moe is, gaat hij naar huis' staat de bijzin vooraan. Na de komma draai je het werkwoord en onderwerp om: gaat hij."
+  },
+  {
+    h: "3.9", cat: "Zinnen verbinden",
+    v: "Welk woord past in: 'Ik ga niet mee ___ ik ziek ben.'",
+    o: ["en", "maar", "omdat", "want"], c: 2,
+    u: "'Omdat' geeft een reden en zorgt dat het werkwoord achteraan staat: ...omdat ik ziek ben."
+  },
+  {
+    h: "3.9", cat: "Zinnen verbinden",
+    v: "Welke zin klopt met 'hoewel'?",
+    o: ["Hoewel het regent gaat hij toch naar buiten.", "Hoewel het regent, gaat hij toch naar buiten.", "Hoewel gaat het regent hij naar buiten.", "Hij gaat naar buiten, hoewel regnet het."], c: 1,
+    u: "Na de bijzin met 'hoewel' zet je een komma en draai je daarna werkwoord en onderwerp om: gaat hij. ✓"
+  },
+  {
+    h: "3.9", cat: "Zinnen verbinden",
+    v: "Welke zin heeft de goede woordvolgorde na 'omdat hij ziek is'?",
+    o: ["Omdat hij ziek is hij niet kan komen.", "Omdat hij ziek is, kan hij niet komen.", "Omdat hij ziek is, hij niet kan komen.", "Omdat hij ziek is niet hij kan komen."], c: 1,
+    u: "Na de bijzin (+ komma) draai je het werkwoord en het onderwerp om: kan hij. Correct: Omdat hij ziek is, kan hij niet komen."
+  },
+
+  // ────────────── EXTRA GEMENGDE VRAGEN ──────────────
+  {
+    h: "1.7", cat: "Werkwoorden",
+    v: "Is de zin 'Werkt jij?' goed of fout?",
+    o: ["Goed", "Fout — het moet zijn: 'Werk jij?'", "Fout — het moet zijn: 'Werken jij?'", "Fout — het moet zijn: 'Werkte jij?'"], c: 1,
+    u: "Als 'jij' ná het werkwoord staat, verdwijnt de -t. Werkt → Werk jij?"
+  },
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Waarom krijgt 'koken' de uitgang -te in de verleden tijd?",
+    o: ["Omdat koken onregelmatig is", "Omdat de stam 'kook' eindigt op k, en k staat in 't kofschip", "Omdat de k zacht klinkt", "Omdat koken een bewegingswerkwoord is"], c: 1,
+    u: "De stam van koken is 'kook'. De laatste letter is k — k staat in 't kofschip → uitgang -te: kookte."
+  },
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Welk hulpwerkwoord hoort bij 'reizen'?",
+    o: ["hebben", "zijn", "worden", "gaan"], c: 1,
+    u: "Reizen is een beweging van A naar B → hulpwerkwoord 'zijn': ik ben gereisd."
+  },
+  {
+    h: "2.7", cat: "Bijvoeglijke naamwoorden",
+    v: "Vul in: 'Hij heeft een ___ auto.' (oud) — auto is een de-woord",
+    o: ["oud", "oude", "ouden", "ouds"], c: 1,
+    u: "Auto is een de-woord. Na 'een' + de-woord schrijf je het bijvoeglijk naamwoord mét -e: een oude auto."
+  },
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Hoe zeg je dat je meer wil dan iets anders — met 'veel'?",
+    o: ["veeler", "veelst", "meer", "meerder"], c: 2,
+    u: "Veel is onregelmatig: veel → meer → meest. Ik wil meer eten (niet: veeler eten)."
+  },
+  {
+    h: "2.9", cat: "Voornaamwoorden",
+    v: "Welk woord gebruik je na een voorzetsel als 'voor'?",
+    o: ["hij", "zij", "hem", "die"], c: 2,
+    u: "Na een voorzetsel (voor, aan, met, van) gebruik je altijd: hem, haar, ons — niet: hij, zij, wij."
+  },
+  {
+    h: "3.7", cat: "Woordvorming",
+    v: "Hoe is het woord 'vriendelijkheid' gemaakt?",
+    o: ["Twee woorden samengevoegd", "Door -elijk en daarna -heid toe te voegen aan 'vriend'", "Door 'on-' voor 'vriendelijk' te zetten", "Het is een onregelmatige vorm"], c: 1,
+    u: "Vriend + -elijk = vriendelijk. Vriendelijk + -heid = vriendelijkheid. Twee stukjes achter elkaar geplakt."
+  },
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "Wat is het voltooid deelwoord van 'meenemen'?",
+    o: ["megenomen", "meegenomen", "meegenemen", "genomen mee"], c: 1,
+    u: "Ge- komt tussen de twee stukken: mee + ge + nomen = meegenomen."
+  },
+  {
+    h: "3.9", cat: "Zinnen verbinden",
+    v: "Na welk verbindingswoord blijft de gewone woordvolgorde?",
+    o: ["omdat", "terwijl", "hoewel", "maar"], c: 3,
+    u: "Na 'maar' blijft de gewone volgorde gewoon staan. Na 'omdat', 'terwijl' en 'hoewel' gaat het werkwoord naar het einde."
+  },
+  {
+    h: "1.8", cat: "Verleden tijd",
+    v: "Wat is de verleden tijd van 'zingen'?",
+    o: ["zingde", "zangde", "zong", "gezingen"], c: 2,
+    u: "Zingen is onregelmatig: zingen → zong. Je moet de onregelmatige vormen uit je hoofd leren."
+  },
+  {
+    h: "1.9", cat: "Voltooide tijd",
+    v: "Wat is het voltooid deelwoord van 'vallen'?",
+    o: ["gevalt", "gevallen", "gevallt", "geviel"], c: 1,
+    u: "Vallen is onregelmatig: vallen → viel → gevallen. Hulpwerkwoord: zijn. Ik ben gevallen."
+  },
+  {
+    h: "2.8", cat: "Trappen van vergelijking",
+    v: "Welke vergelijkingsvorm heeft een SPELLINGSFOUT?",
+    o: ["groter", "rijker", "breeder", "sneller"], c: 2,
+    u: "'Breeder' is fout. Breed heeft een lange klinker — je schrijft maar één d: breed → breder."
+  },
+  {
+    h: "3.8", cat: "Werkwoorden met twee delen",
+    v: "Welke zin klopt met 'afwassen'?",
+    o: ["Ik afwas de borden.", "Ik was de borden af.", "Ik was af de borden.", "Ik heb de borden geafwas."], c: 1,
+    u: "Het werkwoord staat op de tweede plek, het tweede stuk achteraan: Ik was de borden af. Voltooid deelwoord: afgewassen."
+  }
+];
+
+</script>
+<script>
+// =============================================
+// TALENT 1 QUIZ — GAME LOGIC
+// =============================================
+
+// ── Audio Context ──
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTone(freq, type, duration, vol = 0.4, delay = 0) {
+  try {
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+    gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + delay + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + duration + 0.05);
+  } catch(e) {}
+}
+
+const SFX = {
+  correct() {
+    playTone(523, 'sine', 0.12, 0.3);
+    playTone(659, 'sine', 0.12, 0.3, 0.1);
+    playTone(784, 'sine', 0.2, 0.3, 0.2);
+  },
+  wrong() {
+    playTone(300, 'sawtooth', 0.08, 0.3);
+    playTone(220, 'sawtooth', 0.25, 0.3, 0.1);
+  },
+  streak() {
+    [523,659,784,1047].forEach((f,i) => playTone(f, 'sine', 0.15, 0.35, i*0.08));
+  },
+  countdown() {
+    playTone(440, 'sine', 0.15, 0.3);
+  },
+  go() {
+    [392,523,659,784].forEach((f,i) => playTone(f, 'triangle', 0.12, 0.4, i*0.06));
+  },
+  gameover() {
+    playTone(440, 'sine', 0.3, 0.35);
+    playTone(415, 'sine', 0.3, 0.35, 0.25);
+    playTone(392, 'sine', 0.5, 0.35, 0.5);
+  },
+  highscore() {
+    const notes = [523,659,784,1047,1319];
+    notes.forEach((f,i) => {
+      playTone(f, 'sine', 0.15, 0.4, i*0.1);
+      playTone(f*1.5, 'triangle', 0.1, 0.2, i*0.1+0.05);
+    });
+  },
+  tick() {
+    playTone(880, 'square', 0.04, 0.15);
+  },
+  urgentTick() {
+    playTone(1100, 'square', 0.06, 0.25);
+  },
+  click() {
+    playTone(600, 'sine', 0.06, 0.2);
+  },
+  bonus() {
+    [784,988,1175].forEach((f,i) => playTone(f, 'triangle', 0.12, 0.3, i*0.07));
+  }
+};
+
+// ── State ──
+let state = {
+  vragen: [],
+  huidig: 0,
+  score: 0,
+  streak: 0,
+  maxStreak: 0,
+  goedCount: 0,
+  foutCount: 0,
+  fouteVragen: [],
+  timerInterval: null,
+  timerLeft: 15,
+  answered: false,
+  multiplier: 1,
+  diffCount: 10
+};
+
+// ── Utilities ──
+function shuffle(arr) {
+  let a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function $(id) { return document.getElementById(id); }
+
+// ── Screen management ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active', 'exit');
+  });
+  document.getElementById(id).classList.add('active');
+}
+
+function transitionTo(id) {
+  const current = document.querySelector('.screen.active');
+  if (current) current.classList.add('exit');
+  setTimeout(() => {
+    current && current.classList.remove('active', 'exit');
+    document.getElementById(id).classList.add('active');
+  }, 280);
+}
+
+// ── Scores (localStorage) ──
+function getScores() {
+  try { return JSON.parse(localStorage.getItem('talent1_scores') || '[]'); } catch { return []; }
+}
+function saveScore(pts, correct, total, diff) {
+  const scores = getScores();
+  scores.push({ pts, correct, total, diff, date: new Date().toLocaleDateString('nl-NL') });
+  scores.sort((a,b) => b.pts - a.pts);
+  localStorage.setItem('talent1_scores', JSON.stringify(scores.slice(0,10)));
+}
+function getHighscore() {
+  const s = getScores();
+  return s.length ? s[0].pts : 0;
+}
+
+function updateHomeHighscore() {
+  const hs = getHighscore();
+  $('hs-text').textContent = hs ? `Highscore: ${hs} punten` : 'Nog geen highscore';
+}
+
+function showScores() {
+  const scores = getScores();
+  const list = $('scores-list');
+  if (!scores.length) {
+    list.innerHTML = '<div class="no-scores">Nog geen scores gespeeld!</div>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉'];
+  list.innerHTML = scores.map((s,i) => `
+    <div class="score-entry">
+      <div class="score-rank">${medals[i] || (i+1)}</div>
+      <div class="score-info">
+        <div class="score-pts">${s.pts} pts</div>
+        <div class="score-meta">${s.correct}/${s.total} goed · ${s.diff} vragen · ${s.date}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function clearScores() {
+  if (confirm('Weet je zeker dat je alle scores wilt wissen?')) {
+    localStorage.removeItem('talent1_scores');
+    showScores();
+    updateHomeHighscore();
+  }
+}
+
+// ── Home setup ──
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.diffCount = parseInt(btn.dataset.diff);
+    SFX.click();
+  });
+});
+
+$('btn-start').addEventListener('click', () => {
+  SFX.click();
+  startCountdown();
+});
+
+// ── Countdown ──
+function startCountdown() {
+  transitionTo('screen-countdown');
+  let n = 3;
+  $('countdown-num').textContent = n;
+  SFX.countdown();
+  const iv = setInterval(() => {
+    n--;
+    if (n <= 0) {
+      clearInterval(iv);
+      $('countdown-num').textContent = 'GO!';
+      SFX.go();
+      setTimeout(() => startGame(), 700);
+    } else {
+      $('countdown-num').textContent = n;
+      // Trigger re-animation
+      const el = $('countdown-num');
+      el.style.animation = 'none';
+      el.offsetHeight;
+      el.style.animation = 'countPop 0.4s ease-out';
+      SFX.countdown();
+    }
+  }, 900);
+}
+
+// ── Game start ──
+function startGame() {
+  const pool = shuffle(ALLE_VRAGEN);
+  state.vragen = pool.slice(0, Math.min(state.diffCount, pool.length));
+  state.huidig = 0;
+  state.score = 0;
+  state.streak = 0;
+  state.maxStreak = 0;
+  state.goedCount = 0;
+  state.foutCount = 0;
+  state.fouteVragen = [];
+  state.multiplier = 1;
+  transitionTo('screen-game');
+  renderVraag();
+}
+
+// ── Render question ──
+function renderVraag() {
+  const v = state.vragen[state.huidig];
+  const n = state.huidig + 1;
+  const tot = state.vragen.length;
+  state.answered = false;
+
+  // Header
+  $('q-counter').textContent = `${n} / ${tot}`;
+  $('progress-bar').style.width = `${((n-1)/tot)*100}%`;
+  $('live-score').textContent = state.score;
+  updateStreakBadge();
+  updateBonusBar();
+
+  // Question
+  $('q-hoofdstuk').textContent = `H ${v.h}`;
+  $('q-category').textContent = v.cat;
+  $('q-text').textContent = v.v;
+
+  // Randomize option order
+  const shuffled = shuffle(v.o.map((o,i) => ({ text: o, orig: i })));
+  const correctOrig = v.c;
+
+  const grid = $('answers-grid');
+  grid.innerHTML = shuffled.map((opt, idx) => `
+    <button class="answer-btn" onclick="answerClick(this, ${opt.orig === correctOrig}, ${opt.orig === correctOrig}, ${JSON.stringify(shuffled).replace(/"/g,'&quot;')}, ${correctOrig})">
+      ${opt.text}
+    </button>
+  `).join('');
+
+  // Rebuild with correct data
+  grid.innerHTML = '';
+  shuffled.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = opt.text;
+    btn.dataset.origIdx = opt.orig;
+    btn.onclick = () => handleAnswer(btn, opt.orig === correctOrig, shuffled, correctOrig);
+    grid.appendChild(btn);
+  });
+
+  // Start timer
+  startTimer();
+}
+
+// ── Timer ──
+function startTimer() {
+  clearInterval(state.timerInterval);
+  state.timerLeft = 15;
+  updateTimer();
+
+  state.timerInterval = setInterval(() => {
+    state.timerLeft--;
+    updateTimer();
+
+    if (state.timerLeft <= 5 && state.timerLeft > 0 && !state.answered) {
+      SFX.urgentTick();
+    } else if (state.timerLeft > 5 && !state.answered) {
+      // silent
+    }
+
+    if (state.timerLeft <= 0) {
+      clearInterval(state.timerInterval);
+      if (!state.answered) timeUp();
+    }
+  }, 1000);
+}
+
+function updateTimer() {
+  const pct = state.timerLeft / 15;
+  const circumference = 2 * Math.PI * 52;
+  const offset = circumference * (1 - pct);
+  $('timer-fill').style.strokeDashoffset = offset;
+  $('timer-text').textContent = state.timerLeft;
+
+  const fill = $('timer-fill');
+  if (state.timerLeft <= 5) fill.classList.add('warn');
+  else fill.classList.remove('warn');
+}
+
+function timeUp() {
+  state.answered = true;
+  // Disable all buttons
+  document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+  // Show correct answer
+  const v = state.vragen[state.huidig];
+  document.querySelectorAll('.answer-btn').forEach(b => {
+    if (parseInt(b.dataset.origIdx) === v.c) b.classList.add('correct-toon');
+  });
+  state.streak = 0;
+  state.foutCount++;
+  state.fouteVragen.push({ ...v, gekozen: 'Geen antwoord (tijd op)' });
+  SFX.wrong();
+  updateStreakBadge();
+
+  // Show feedback
+  setTimeout(() => showFeedback(false, v, 'Tijd is op! ⏰', 0), 600);
+}
+
+// ── Handle answer ──
+function handleAnswer(btn, isCorrect, shuffled, correctOrig) {
+  if (state.answered) return;
+  state.answered = true;
+  clearInterval(state.timerInterval);
+
+  const v = state.vragen[state.huidig];
+  const allBtns = document.querySelectorAll('.answer-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  // Update multiplier based on time left
+  const timeBonus = state.timerLeft >= 12 ? 3 : state.timerLeft >= 8 ? 2 : 1;
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    state.streak++;
+    state.maxStreak = Math.max(state.maxStreak, state.streak);
+    state.goedCount++;
+
+    // Streak multiplier
+    state.multiplier = state.streak >= 5 ? 3 : state.streak >= 3 ? 2 : 1;
+    const pts = 100 * state.multiplier * timeBonus;
+    state.score += pts;
+    $('live-score').textContent = state.score;
+
+    if (state.streak >= 3) SFX.streak();
+    else SFX.correct();
+
+    showScorePopup(btn, `+${pts}`);
+    updateStreakBadge();
+    updateBonusBar();
+
+    setTimeout(() => showFeedback(true, v, v.v, pts), 800);
+  } else {
+    btn.classList.add('wrong');
+    // Show correct
+    allBtns.forEach(b => {
+      if (parseInt(b.dataset.origIdx) === correctOrig) b.classList.add('correct-toon');
+    });
+    state.streak = 0;
+    state.foutCount++;
+    state.fouteVragen.push({ ...v, gekozen: btn.textContent });
+    state.multiplier = 1;
+    SFX.wrong();
+    updateStreakBadge();
+    updateBonusBar();
+    showScorePopup(btn, `0`, true);
+
+    setTimeout(() => showFeedback(false, v, v.v, 0), 900);
+  }
+}
+
+function showScorePopup(btn, text, isBad = false) {
+  const rect = btn.getBoundingClientRect();
+  const pop = document.createElement('div');
+  pop.className = 'score-popup';
+  pop.textContent = text;
+  pop.style.left = `${rect.left + rect.width/2 - 20}px`;
+  pop.style.top = `${rect.top - 10}px`;
+  if (isBad) pop.style.color = '#f87171';
+  document.body.appendChild(pop);
+  setTimeout(() => pop.remove(), 1100);
+}
+
+function updateStreakBadge() {
+  $('streak-count').textContent = state.streak;
+  const badge = $('streak-badge');
+  if (state.streak >= 3) {
+    badge.style.background = 'rgba(255,107,107,0.3)';
+    badge.style.borderColor = 'rgba(255,107,107,0.6)';
+    badge.classList.add('bump');
+    setTimeout(() => badge.classList.remove('bump'), 300);
+  } else {
+    badge.style.background = '';
+    badge.style.borderColor = '';
+  }
+}
+
+function updateBonusBar() {
+  const bar = $('bonus-bar');
+  const txt = $('bonus-text');
+  if (state.streak >= 5) {
+    txt.textContent = `⚡ 3× punten — MEGA STREAK! (${state.streak})`;
+    bar.classList.add('active');
+  } else if (state.streak >= 3) {
+    txt.textContent = `⚡ 2× punten — Streak! (${state.streak})`;
+    bar.classList.add('active');
+  } else {
+    txt.textContent = `⚡ 1× punten`;
+    bar.classList.remove('active');
+  }
+}
+
+// ── Feedback screen ──
+function showFeedback(correct, v, vraagTekst, pts) {
+  $('fb-emoji').textContent = correct ? (state.streak >= 5 ? '🔥' : state.streak >= 3 ? '🌟' : '✅') : '❌';
+  const title = $('fb-title');
+  title.textContent = correct
+    ? (state.streak >= 5 ? 'MEGA STREAK!' : state.streak >= 3 ? 'Super goed!' : 'Goed!')
+    : 'Helaas...';
+  title.className = 'feedback-title ' + (correct ? 'good' : 'bad');
+
+  $('fb-pts').textContent = pts > 0 ? `+${pts} punten` : 'Geen punten';
+  $('fb-explanation').textContent = v.u;
+  $('fb-answer').textContent = correct
+    ? `Juist antwoord: ${v.o[v.c]}`
+    : `Juist antwoord: ${v.o[v.c]}`;
+
+  const isLast = state.huidig >= state.vragen.length - 1;
+  $('btn-next').textContent = isLast ? 'Resultaat bekijken 🏆' : 'Volgende vraag →';
+  $('btn-next').onclick = isLast ? showResult : nextQuestion;
+
+  transitionTo('screen-feedback');
+}
+
+function nextQuestion() {
+  SFX.click();
+  state.huidig++;
+  transitionTo('screen-game');
+  setTimeout(renderVraag, 300);
+}
+
+// ── Result screen ──
+function showResult() {
+  clearInterval(state.timerInterval);
+  const tot = state.vragen.length;
+  const pct = Math.round((state.goedCount / tot) * 100);
+  const isHighscore = state.score > getHighscore();
+
+  saveScore(state.score, state.goedCount, tot, tot);
+
+  $('result-score-big').textContent = state.score;
+  $('stat-correct').textContent = state.goedCount;
+  $('stat-wrong').textContent = state.foutCount;
+  $('stat-streak').textContent = state.maxStreak;
+  $('stat-pct').textContent = `${pct}%`;
+
+  // Trophy & title
+  let trophy, title;
+  if (pct === 100) { trophy = '🏆'; title = 'Perfect!'; }
+  else if (pct >= 80) { trophy = '🥇'; title = 'Uitstekend!'; }
+  else if (pct >= 60) { trophy = '🥈'; title = 'Goed gedaan!'; }
+  else if (pct >= 40) { trophy = '🥉'; title = 'Aardig!'; }
+  else { trophy = '📚'; title = 'Blijven oefenen!'; }
+
+  $('result-trophy').textContent = trophy;
+  $('result-title').textContent = title;
+
+  const newRec = $('new-record');
+  newRec.style.display = isHighscore && state.score > 0 ? 'block' : 'none';
+
+  // Wrong answers list
+  const wl = $('wrong-list');
+  if (state.fouteVragen.length > 0) {
+    wl.innerHTML = `
+      <div class="wrong-list-title">Verbeterpunten (${state.fouteVragen.length})</div>
+      ${state.fouteVragen.map(f => `
+        <div class="wrong-item">
+          <div class="wrong-item-q">${f.v}</div>
+          <div class="wrong-item-a">Jouw antwoord: <span style="color:#f87171">${f.gekozen || '—'}</span></div>
+          <div class="wrong-item-a">Juist: <span class="correct-ans">${f.o[f.c]}</span></div>
+          <div class="wrong-item-expl">${f.u}</div>
+        </div>
+      `).join('')}
+    `;
+  } else {
+    wl.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.4);font-size:14px">🎯 Geen fouten! Geweldig!</div>';
+  }
+
+  transitionTo('screen-result');
+
+  if (isHighscore && state.score > 0) {
+    SFX.highscore();
+    setTimeout(() => launchConfetti(), 400);
+  } else if (pct >= 80) {
+    SFX.streak();
+    setTimeout(() => launchConfetti(30), 400);
+  } else {
+    SFX.gameover();
+  }
+
+  updateHomeHighscore();
+}
+
+function goHome() {
+  SFX.click();
+  clearInterval(state.timerInterval);
+  updateHomeHighscore();
+  transitionTo('screen-home');
+}
+
+function restartGame() {
+  SFX.click();
+  clearInterval(state.timerInterval);
+  startCountdown();
+}
+
+// ── Confetti ──
+function launchConfetti(count = 80) {
+  const canvas = $('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff922b','#c77dff','#48cae4'];
+  const pieces = [];
+
+  for (let i = 0; i < count; i++) {
+    pieces.push({
+      x: Math.random() * canvas.width,
+      y: -20 - Math.random() * 200,
+      vx: (Math.random() - 0.5) * 6,
+      vy: 2 + Math.random() * 5,
+      w: 8 + Math.random() * 12,
+      h: 5 + Math.random() * 8,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rot: Math.random() * Math.PI * 2,
+      vrot: (Math.random() - 0.5) * 0.2
+    });
+  }
+
+  let frame = 0;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.rot += p.vrot;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+    frame++;
+    if (frame < 180) requestAnimationFrame(animate);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  animate();
+}
+
+// ── Scoreboard screen ──
+document.getElementById('screen-scores').addEventListener('transitionend', () => {});
+const origShowScreen = window.showScreen;
+window.showScreen = function(id) {
+  if (id === 'screen-scores') showScores();
+  SFX.click();
+  transitionTo(id);
+};
+
+// ── Init ──
+window.addEventListener('load', () => {
+  updateHomeHighscore();
+  // Init difficulty
+  state.diffCount = 10;
+});
+
+</script>
+</body>
+</html>
