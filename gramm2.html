@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Talent 1 — Nederlands Quiz (40 Vragen)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+/* Exacte structuurbehoud van originele Talent CSS */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', sans-serif; background: #1a0533; color: #fff; min-height: 100vh; overflow: hidden; position: fixed; width: 100%; height: 100%; }
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 16px; opacity: 0; pointer-events: none; transition: 0.3s; }
+.screen.active { opacity: 1; pointer-events: all; }
+.btn { background: #ffd93d; color: #1a0533; border: none; padding: 18px 30px; border-radius: 20px; font-weight: 900; font-size: 1.2rem; cursor: pointer; box-shadow: 0 6px 0 #b38f00; font-family: 'Fredoka One', cursive; }
+.opt { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); padding: 16px; border-radius: 15px; margin: 10px 0; cursor: pointer; font-weight: 600; }
+.opt.correct { background: #6bcb77 !important; border-color: #fff !important; }
+.opt.wrong { background: #ff6b6b !important; }
+.progress-bar { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin: 20px 0; }
+.progress-fill { height: 100%; background: #ffd93d; width: 0%; transition: 0.3s; }
+</style>
+</head>
+<body>
+    <div id="screen-home" class="screen active">
+        <h1 style="font-family:'Fredoka One'; font-size: 3rem; margin-top: 60px; color: #ffd93d;">TALENT 1</h1>
+        <p style="margin-bottom: 40px;">40 Vragen: Grammatica & Spelling</p>
+        <button class="btn" onclick="startGame()">START</button>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <div style="width: 100%; max-width: 500px;">
+            <div id="q-cat" style="color:#ffd93d; font-weight:900; margin-bottom:10px; text-transform:uppercase;">THEMA</div>
+            <h2 id="q-text" style="margin-bottom: 20px; font-size: 1.2rem;">Vraag laden...</h2>
+            <div id="options-list"></div>
+        </div>
+        <div id="feedback-area" style="display:none; margin-top:20px; width:100%; max-width:500px;">
+            <p id="explanation-text" style="background:rgba(255,255,255,0.15); padding:15px; border-radius:10px; margin-bottom:15px; font-size: 0.9rem;"></p>
+            <button id="next-btn" class="btn" style="width:100%;">VOLGENDE</button>
+        </div>
+    </div>
+
+<script>
+const questions = [
+    { cat:"Thema 1: Inversie", v:"Welke zin bevat een correcte 'inversie'?", o:["Vanavond ik ga naar de bioscoop.","Vanavond ga ik naar de bioscoop.","Ik ga vanavond naar de bioscoop.","Naar de bioscoop ik ga vanavond."], c:1, u:"Bij inversie wisselen de persoonsvorm (ga) en het onderwerp (ik) van plaats omdat er een ander zinsdeel vooraan de zin staat." },
+    { cat:"Thema 1: De Stam", v:"Wat is de stam van het werkwoord 'geloven'?", o:["gelov","gelove","geloof","geloofd"], c:2, u:"Haal -en van het hele werkwoord af (gelov) en pas de spelling aan naar de ik-vorm (geloof)." },
+    { cat:"Thema 1: Persoonsvorm", v:"Hoe vind je de persoonsvorm in een zin het makkelijkst?", o:["Vraag wie of wat?","Zet de zin in een andere tijd (tijdproef)","Kijk naar het laatste woord","Zoek het mooiste woord"], c:1, u:"De persoonsvorm is het werkwoord dat verandert als je de zin van tijd verandert (bijv. van tegenwoordig naar verleden tijd)." },
+    { cat:"Thema 1: Spelling", v:"Wat is de ik-vorm van 'vinden'?", o:["vindt","vind","vinde","vinden"], c:1, u:"De stam/ik-vorm van vinden is 'vind'. Je schrijft NOOIT een t achter de ik-vorm." },
+    { cat:"Thema 1: Inversie", v:"Welke zin is fout?", o:["Morgen regent het.","Het regent morgen.","Regent het morgen?","Morgen het regent."], c:3, u:"Na 'Morgen' moet de persoonsvorm (regent) komen, niet het onderwerp (het)." },
+    { cat:"Thema 1: Stam", v:"Wat is de stam van 'antwoorden'?", o:["antwoord","antwoorde","antwoordt","antwoordden"], c:0, u:"Haal -en af van het hele werkwoord (antwoorden). De stam is 'antwoord'." },
+    { cat:"Thema 1: Spelling", v:"Kies de juiste zin:", o:["Jij vind dat leuk.","Jij vindt dat leuk.","Vindt jij dat leuk?","Jij vind dat leuk."], c:1, u:"Bij de 'jij-vorm' krijg je stam+t (vind+t). Behalve als jij achter de persoonsvorm staat." },
+    { cat:"Thema 1: Jij-vorm", v:"Welke vorm is juist?", o:["Vind jij dat ook?","Vindt jij dat ook?","Vindt je dat ook?","Vinde jij dat ook?"], c:0, u:"Als 'jij' achter de persoonsvorm staat, komt er GEEN extra t bij de stam." },
+    { cat:"Thema 2: Verleden tijd", v:"Wat is de verleden tijd van 'maken'?", o:["maakde","maakte","maakten","maakden"], c:1, u:"De k van stam 'maak' zit in 't kofschip-x, dus krijg je stam+te." },
+    { cat:"Thema 2: 't Kofschip-x", v:"De stam van 'verhuizen' eindigt op een z. Wat is de verleden tijd?", o:["verhuiste","verhuisten","verhuisde","verhuisden"], c:2, u:"De z zit NIET in 't kofschip-x. Dus krijg je stam(verhuis)+de." },
+    { cat:"Thema 2: Sterke werkwoorden", v:"Wat is de verleden tijd van 'lopen'?", o:["loopte","liep","liepen","gelopen"], c:1, u:"Lopen is een sterk werkwoord en verandert van klank in de verleden tijd." },
+    { cat:"Thema 2: Spelling", v:"Kies de juiste zin:", o:["Zij fietsten gisteren naar school.","Zij fietstte gisteren naar school.","Zij fietsden gisteren naar school.","Zij fietstden gisteren naar school."], c:0, u:"Stam is fiets. S zit in 't kofschip. Meervoud is stam+ten = fietsten." },
+    { cat:"Thema 2: Adjectieven", v:"In welke zin staat het bijvoeglijk naamwoord goed?", o:["Het mooie meisje.","Het mooi meisje.","Een mooie huis.","Het groen gras."], c:0, u:"Bij 'het-woorden' krijgt het adjectief een -e als er 'het' voor staat." },
+    { cat:"Thema 2: Buigings-e", v:"Kies het juiste woord: 'Een ___ boek.'", o:["dikke","dik","dikste","dikker"], c:1, u:"Bij een 'het-woord' (het boek) krijgt het adjectief GEEN -e als er 'een' voor staat." },
+    { cat:"Thema 2: Trappen van vergelijking", v:"Wat is de juiste reeks voor 'goed'?", o:["goed - goeier - goeist","goed - beter - best","goed - meer goed - meest goed","goed - betere - beste"], c:1, u:"Goed is een onregelmatig bijvoeglijk naamwoord." },
+    { cat:"Thema 2: Vergelijking", v:"Vul in: 'Hij is groter ___ ik.'", o:["dan","als","of","zoals"], c:0, u:"Bij een vergrotende trap (groter, beter) gebruik je altijd 'dan'." },
+    { cat:"Thema 2: Trappen", v:"Wat is de vergrotende trap van 'duur'?", o:["duurst","duurste","duurder","meer duur"], c:2, u:"Stellend: duur. Vergrotend: duurder (+der)." },
+    { cat:"Thema 2: Adjectief", v:"Welke vorm is juist?", o:["De houte deur","De houten deur","Het houten deur","Een houte deur"], c:1, u:"Stoffelijke bijvoeglijk naamwoorden (hout, goud) eindigen bijna altijd op -en." },
+    { cat:"Thema 2: Voornaamwoorden", v:"Welk woord is een 'bezittelijk voornaamwoord'?", o:["Mij","Mijn","Ik","Hen"], c:1, u:"'Mijn' geeft aan dat iets van jou is (bezit)." },
+    { cat:"Thema 2: Persoonlijk vnw", v:"Welk woord is een 'persoonlijk voornaamwoord'?", o:["Zijn","Jouw","U","Hun"], c:2, u:"'U' verwijst naar een persoon. De andere drie geven bezit aan." },
+    { cat:"Thema 3: Voltooid deelwoord", v:"Hoe schrijf je het voltooid deelwoord van 'pakken'?", o:["gepakte","gepakt","gepaktte","gepakt d"], c:1, u:"Kijk naar 't kofschip-x. De k zit erin, dus het eindigt op een t." },
+    { cat:"Thema 3: Hulpwerkwoord", v:"Welke zin staat in de voltooide tijd?", o:["Ik loop naar huis.","Ik ben naar huis gelopen.","Ik liep naar huis.","Ik zal naar huis lopen."], c:1, u:"Een voltooide tijd heeft een hulpwerkwoord (ben) en een voltooid deelwoord (gelopen)." },
+    { cat:"Thema 3: Spelling", v:"Wat is juist: 'Hij heeft gisteren ___.'", o:["gefietst","gefietst d","gefietste","fietste"], c:0, u:"Stam is fiets. De s zit in 't kofschip, dus het voltooid deelwoord eindigt op een t." },
+    { cat:"Thema 3: Voltooid deelwoord", v:"Wat is het voltooid deelwoord van 'horen'?", o:["gehoord","gehoort","gehoorde","hoorde"], c:0, u:"De r zit NIET in 't kofschip, dus het eindigt op een d." },
+    { cat:"Thema 3: Prefixen", v:"Wat betekent het voorvoegsel 'her-'?", o:["Niet","Opnieuw","Samen","Tegen"], c:1, u:"Bijv: Herkansen = opnieuw kansen. Herstellen = opnieuw goed maken." },
+    { cat:"Thema 3: Woordvorming", v:"Wat betekent 'on-' in 'ongelukkig'?", o:["Heel erg","Niet","Soms","Altijd"], c:1, u:"'On-' maakt van een woord het tegenovergestelde (niet gelukkig)." },
+    { cat:"Thema 3: Scheidbaar werkwoord", v:"Wat is de juiste zin?", o:["Ik opbel mijn oma.","Ik bel mijn oma op.","Ik bel op mijn oma.","Ik heb opbellen mijn oma."], c:1, u:"Bij een scheidbaar werkwoord (opbellen) komt het voorvoegsel in een hoofdzin achteraan." },
+    { cat:"Thema 3: Bijzin", v:"Waar staat de persoonsvorm in een bijzin?", o:["Plek 1","Plek 2","Helemaal achteraan","Middenin"], c:2, u:"In een zin die begint met 'omdat' of 'dat' staan de werkwoorden achteraan." },
+    { cat:"Thema 3: Woordvolgorde", v:"Welke bijzin is correct?", o:["...dat ik gisteren te laat kwam.","...dat ik kwam gisteren te laat.","...dat kwam ik gisteren te laat.","...dat gisteren ik kwam te laat."], c:0, u:"'Kwam' (persoonsvorm) moet aan het eind." },
+    { cat:"Thema 3: Voegwoord", v:"Welk woord leidt een bijzin in?", o:["En","Maar","Omdat","Want"], c:2, u:"'Omdat' is een onderschikkend voegwoord dat een bijzin maakt." },
+    { cat:"Thema 3: Spelling", v:"Is 'verbrand' in 'De verbrande vinger' een voltooid deelwoord?", o:["Ja","Nee, het is een bijvoeglijk naamwoord","Het is een persoonsvorm","Het is een zelfstandig naamwoord"], c:1, u:"Het zegt iets over de vinger, dus het is bijvoeglijk gebruikt." },
+    { cat:"Thema 3: Spelling", v:"Hoe spel je het voltooid deelwoord van 'beantwoorden'?", o:["beantwoord","beantwoordt","beantwoordde","beantoort"], c:0, u:"De stam is 'beantwoord' (eindigt op een d), dus het voltooid deelwoord eindigt ook op een d." },
+    { cat:"Thema 3: Bijzin", v:"Maak de zin af: 'Ik weet niet of...'", o:["hij komt morgen.","hij morgen komt.","komt hij morgen.","morgen komt hij."], c:1, u:"'Of' leidt een bijzin in, dus 'komt' gaat naar het eind." },
+    { cat:"Thema 1: Onderwerp", v:"Hoe vind je het onderwerp in een zin?", o:["Wie/wat + persoonsvorm?","Zoek naar de tijd","Kijk naar het eerste woord","Vraag waar?"], c:0, u:"Met de vraag 'Wie of wat + persoonsvorm' vind je altijd wie de actie uitvoert." },
+    { cat:"Thema 2: Bezit", v:"Wat is het bezittelijk voornaamwoord bij 'u'?", o:["U","Uw","Jouw","Hun"], c:1, u:"'Uw jas' geeft aan dat de jas van u is." },
+    { cat:"Thema 2: Hen of hun?", v:"Wanneer gebruik je 'hun' als bezittelijk voornaamwoord?", o:["Als het naar mensen verwijst","Als het bezit aangeeft","Als het na een voorzetsel staat","Nooit"], c:1, u:"Bijv: 'Dat is hun huis'." },
+    { cat:"Thema 1: Vraagzin", v:"Wat gebeurt er in een vraagzin?", o:["De zin blijft hetzelfde","De persoonsvorm komt vooraan","Het onderwerp verdwijnt","Er komt een -e bij"], c:1, u:"In een gewone vraagzin (Ja/Nee vraag) start je met de persoonsvorm." },
+    { cat:"Thema 3: Her-", v:"Wat is de betekenis van 'herorganiseren'?", o:["Stoppen met organiseren","Verkeerd organiseren","Opnieuw organiseren","Niet organiseren"], c:2, u:"Prefix 'her-' betekent opnieuw." },
+    { cat:"Thema 2: Dan/Als", v:"Kies de juiste vorm: 'Ik ben net zo groot ___ jij.'", o:["dan","als","of","zoals"], c:1, u:"Bij een gelijkheid (net zo... als) gebruik je 'als'." },
+    { cat:"Thema 3: Voltooid deelwoord", v:"Wat is het voltooid deelwoord van 'beleven'?", o:["beleeft","beleefd","beleefde","beleeven"], c:1, u:"Stam is beleef (van beleven). De v/f zit NIET in 't kofschip, dus het eindigt op een d." }
+];
+
+let currentIdx = 0; let score = 0;
+function $(id) { return document.getElementById(id); }
+function startGame() {
+    currentIdx = 0; score = 0;
+    $('screen-home').classList.remove('active');
+    $('screen-game').classList.add('active');
+    showQuestion();
+}
+function showQuestion() {
+    const q = questions[currentIdx];
+    $('q-cat').innerText = q.cat;
+    $('q-text').innerText = (currentIdx + 1) + ". " + q.v;
+    $('explanation-text').innerText = q.u;
+    $('feedback-area').style.display = 'none';
+    const list = $('options-list');
+    list.innerHTML = '';
+    q.o.forEach((opt, i) => {
+        const d = document.createElement('div');
+        d.className = 'opt';
+        d.innerText = opt;
+        d.onclick = () => {
+            if($('feedback-area').style.display === 'block') return;
+            if(i === q.c) { d.classList.add('correct'); score++; }
+            else { d.classList.add('wrong'); list.children[q.c].classList.add('correct'); }
+            $('feedback-area').style.display = 'block';
+        };
+        list.appendChild(d);
+    });
+    $('progress-fill').style.width = ((currentIdx + 1) / 40 * 100) + '%';
+}
+$('next-btn').onclick = () => {
+    currentIdx++;
+    if(currentIdx < questions.length) showQuestion();
+    else {
+        $('screen-game').classList.remove('active');
+        document.body.innerHTML = `<div class="screen active" style="justify-content:center; text-align:center; background:#1a0533;">
+            <h1 style="color:#ffd93d; font-family:'Fredoka One';">RESULTAAT</h1>
+            <div style="font-size:4rem; font-weight:900; color:white;">${Math.round(score/40*100)}%</div>
+            <p style="color:white; margin-bottom:20px;">Je hebt ${score} van de 40 vragen goed.</p>
+            <button class="btn" onclick="location.reload()">OPNIEUW</button>
+        </div>`;
+    }
+};
+</script>
+</body>
+</html>
