@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Feniks — Hoofdstuk 5 Quiz (40 Vragen)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+/* Exacte structuurbehoud van originele Feniks CSS */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Nunito', sans-serif; background: #0d1f0a; color: #fff; min-height: 100vh; overflow: hidden; position: fixed; width: 100%; height: 100%; }
+#confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 999; }
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 16px; opacity: 0; pointer-events: none; transition: 0.3s; transform: translateX(30px); overflow-y: auto; }
+.screen.active { opacity: 1; pointer-events: all; transform: translateX(0); }
+.btn { background: #4ade80; color: #061204; border: none; padding: 16px 24px; border-radius: 16px; font-weight: 900; font-size: 1.1rem; cursor: pointer; box-shadow: 0 6px 0 #166534; font-family: 'Fredoka One', cursive; text-transform: uppercase; }
+.q-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 20px; border-radius: 24px; width: 100%; max-width: 500px; border: 2px solid rgba(255,255,255,0.1); }
+.opt { background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); padding: 14px 18px; border-radius: 18px; margin: 10px 0; cursor: pointer; transition: 0.2s; font-weight: 600; }
+.opt.correct { background: #22c55e !important; border-color: #4ade80 !important; }
+.opt.wrong { background: #ef4444 !important; }
+.progress-bar { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; margin: 20px 0; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #4ade80, #22d3ee); width: 0%; transition: width 0.3s; }
+</style>
+</head>
+<body>
+    <canvas id="confetti-canvas"></canvas>
+    <div id="screen-home" class="screen active">
+        <h1 style="font-family:'Fredoka One'; font-size: 2.5rem; margin: 40px 0; text-align: center; color: #4ade80;">FENIKS 5</h1>
+        <p style="margin-bottom: 30px; opacity: 0.8;">40 Vragen over Hoofdstuk 5</p>
+        <button class="btn" onclick="startGame()">START QUIZ</button>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <div id="q-container" style="width: 100%; max-width: 500px;">
+            <div id="q-cat" style="text-transform: uppercase; font-size: 0.8rem; font-weight: 900; color: #4ade80; margin-bottom: 8px;">HISTORIE</div>
+            <h2 id="q-text" style="font-size: 1.25rem; margin-bottom: 20px; line-height: 1.3;">Laden...</h2>
+            <div id="options-list"></div>
+        </div>
+        <div id="feedback-area" style="display:none; margin-top: 20px; width: 100%; max-width: 500px;">
+            <div id="explanation-box" style="padding: 16px; background: rgba(255,255,255,0.1); border-radius: 16px; margin-bottom: 20px; font-size: 0.9rem; line-height: 1.5; border-left: 4px solid #4ade80;"></div>
+            <button id="next-btn" class="btn" style="width: 100%;">VOLGENDE VRAAG</button>
+        </div>
+    </div>
+
+<script>
+const questions = [
+    // 5.1
+    { v:"In welk jaar vond de Slag bij Hastings plaats?", o:["1000","1066","1215","1337"], c:1, u:"In 1066 veroverde de Normandische hertog Willem Engeland na zijn overwinning op koning Harold." },
+    { v:"Wie liet het Domesday Book maken?", o:["Koning Jan","Willem de Veroveraar","Lodewijk XI","Jeanne d'Arc"], c:1, u:"Dit boek was bedoeld om alle bezittingen in Engeland te registreren voor de belastingheffing." },
+    { v:"Wat was de Magna Charta?", o:["Een Frans wetboek","Een document dat de macht van de Engelse koning beperkte","Een uitnodiging voor de kruistochten","Een dagboek van een monnik"], c:1, u:"In 1215 werd koning Jan gedwongen dit te tekenen, waardoor hij zich aan de wet moest gaan houden." },
+    { v:"Waarom hadden de Franse koningen in de 11e eeuw weinig macht?", o:["Ze hadden geen leger","Ze bezaten alleen het gebied rondom Parijs","Ze waren constant ziek","Ze woonden in Engeland"], c:1, u:"Het overige land was in handen van machtige leenmannen (adel) die de koning nauwelijks gehoorzaamden." },
+    { v:"Hoe noemen we de registratie van alle Engelse bezittingen in 1086?", o:["Magna Charta","Domesday Book","Bayeux Tapijt","De Staten-Generaal"], c:1, u:"Het Domesday Book (Boek van de Dag van het Oordeel) gaf een uniek overzicht van Engeland." },
+    // 5.2
+    { v:"Wat was de directe aanleiding voor de Honderdjarige Oorlog?", o:["Ruzie over religie","De Engelse koning eiste de Franse troon op","Een aanval op Londen","De diefstal van goud"], c:1, u:"Omdat de Franse koning stierf zonder zoon, claimde de Engelse koning (zijn neef) de troon." },
+    { v:"Welk wapen gaf de Engelsen een groot voordeel?", o:["Het kanon","De longbow (handboog)","Het kruiszwaard","De katapult"], c:1, u:"De longbow kon sneller en verder schieten en drong door ridderharnassen heen." },
+    { v:"Wie bevrijdde de stad Orléans van de Engelsen?", o:["Richard Leeuwenhart","Jeanne d'Arc","Willem de Veroveraar","Filips de Goede"], c:1, u:"Jeanne d'Arc gaf de Franse soldaten hun zelfvertrouwen terug." },
+    { v:"Hoe dachten de mensen in de middeleeuwen over Jeanne d'Arc?", o:["Ze was een gewone boerin","Ze werd door God gestuurd","Ze was een Engelse spion","Ze was de dochter van de koning"], c:1, u:"Veel Fransen geloofden dat zij goddelijke stemmen hoorde om Frankrijk te redden." },
+    { v:"Wat gebeurde er met Jeanne d'Arc in 1431?", o:["Ze werd koningin","Ze stierf op de brandstapel","Ze vluchtte naar Rome","Ze trouwde met de koning"], c:1, u:"Ze werd door de Engelsen gevangen en als ketter veroordeeld tot de dood." },
+    // 5.3
+    { v:"Wat betekent 'centralisatie'?", o:["Macht verdelen","Het land besturen vanuit één plek","De kerk de baas maken","Kastelen afbreken"], c:1, u:"Centralisatie is het streven van vorsten om hun land vanuit één hoofdstad met dezelfde wetten te regeren." },
+    { v:"Waarom waren huursoldaten handiger dan ridders?", o:["Ze waren gratis","Ze waren direct inzetbaar en trouw aan de betaler","Ze hadden betere paarden","Ridders bestonden niet meer"], c:1, u:"Ridders waren leenmannen die vaak alleen vochten als het hen uitkwam; huursoldaten vochten zolang ze betaald kregen." },
+    { v:"Hoe kwam de koning aan geld voor zijn beroepsleger?", o:["Door goud te vinden","Door belastingen te heffen","Door te bedelen bij de paus","Door handel met Amerika"], c:1, u:"Vaste belastingen op goederen zoals zout (gabelle) gaven de koning een constant inkomen." },
+    { v:"Welke bijnaam had Lodewijk XI van Frankrijk?", o:["De Leeuw","De Spin","De Goede","De Zonnekoning"], c:1, u:"Hij werd de spin genoemd omdat hij een web van bondgenootschappen en ambtenaren gebruikte om de adel te verslaan." },
+    { v:"Wat was het doel van de Staten-Generaal?", o:["Oorlog voeren","Overleg tussen de koning en de drie standen","De kerk hervormen","Boeren bevrijden"], c:1, u:"In de Staten-Generaal kon de koning steun vragen (vooral voor belasting) aan adel, geestelijkheid en burgers." },
+    // 5.4
+    { v:"In welk jaar riep paus Urbanus II op tot de kruistocht?", o:["1066","1095","1215","1492"], c:1, u:"Tijdens de kerkvergadering in Clermont riep hij christenen op Jeruzalem te heroveren." },
+    { v:"Wat was een 'religieuze' reden voor de kruistochten?", o:["Goud vinden","De heilige plaatsen bevrijden","Nieuwe landen ontdekken","Engeland pesten"], c:1, u:"Het doel was om Jeruzalem terug te winnen van de moslims voor christelijke pelgrims." },
+    { v:"Wie was de islamitische leider die Jeruzalem in 1187 heroverde?", o:["Osman","Saladin","Suleiman","Ali"], c:1, u:"Saladin was een gerespecteerd generaal die Jeruzalem heroverde op de kruisvaarders." },
+    { v:"Welk luxe product namen de kruisvaarders mee uit het Oosten?", o:["Aardappels","Specerijen","Tomaten","Mais"], c:1, u:"In het Oosten maakten Europeanen kennis met suiker, zijde en specerijen." },
+    { v:"Welke wetenschap was bij de Arabieren veel verder ontwikkeld?", o:["Luchtvaart","Wiskunde en geneeskunde","Scheepsbouw","Spoorwegen"], c:1, u:"Arabische geleerden wisten veel meer over getallen (het getal nul) en het menselijk lichaam." },
+    // Mix 21-40
+    { v:"Wat was de 'Gabelle' in Frankrijk?", o:["Een kasteel","Zoutbelasting","Een ridderorde","Een wapen"], c:1, u:"Deze belasting was essentieel voor de koning om zijn bestuur te financieren." },
+    { v:"Wat is een 'leenman'?", o:["Een koning","Iemand die land gebruikt in ruil voor trouw","Een boer","Een handelaar"], c:1, u:"In het feodale stelsel gaf een leenheer land aan een leenman (vazal) voor militaire steun." },
+    { v:"In welk land ligt de regio Normandië?", o:["Engeland","Frankrijk","Duitsland","Italië"], c:1, u:"Vanuit Normandië in Noord-Frankrijk vertrok Willem om Engeland te veroveren." },
+    { v:"Waarom was de stad Jeruzalem heilig voor christenen?", o:["Jezus was daar gestorven en begraven","De paus woonde daar","Daar was de eerste bijbel geschreven","Het was de rijkste stad"], c:0, u:"Het Heilige Graf van Jezus was de belangrijkste pelgrimplaats voor christenen." },
+    { v:"Wat was het resultaat van de Eerste Kruistocht?", o:["Mislukking","De verovering van Jeruzalem","De koning stierf","Een vredesverdrag"], c:1, u:"De Eerste Kruistocht was de enige die echt slaagde in het veroveren van Jeruzalem." },
+    { v:"Hoe noemden de ridders zichzelf die naar het Oosten trokken?", o:["Soldaten","Kruisvaarders","Verkenners","Pelgrims"], c:1, u:"Ze droegen een kruis op hun kleding als teken van hun heilige missie." },
+    { v:"Wat was een 'staat' in de middeleeuwen?", o:["Een stad","Een gebied met vaste grenzen en één bestuur","Een ridderkasteel","Een boerderij"], c:1, u:"Staatsvorming betekende dat een gebied een eenheid werd onder één vorst." },
+    { v:"Wie vormden de 'derde stand'?", o:["Adel","Geestelijkheid","Burgers en boeren","Ridders"], c:2, u:"De burgers in de steden werden steeds belangrijker voor de koning vanwege hun geld." },
+    { v:"Wat gebeurde er met de adel door centralisatie?", o:["Ze kregen meer macht","Ze verloren macht aan de koning","Ze werden allemaal koning","Niets"], c:1, u:"De koning had de ridders minder nodig en nam zelf de controle over het leger en rechtspraak." },
+    { v:"Hoe vervoerden kruisvaarders hun spullen vaak?", o:["Per vliegtuig","Per schip over de Middellandse Zee","Met de trein","Alleen te voet"], c:1, u:"De scheepvaart in de steden (zoals Venetië) bloeide op door het transport van kruisvaarders." },
+    { v:"Wat is een ketter?", o:["Een heel gelovig iemand","Iemand met een afwijkende geloofsleer","Een Engelse ridder","Een Franse ambtenaar"], c:1, u:"Jeanne d'Arc werd als ketter veroordeeld omdat ze beweerde rechtstreeks met God te spreken." },
+    { v:"Wie was Richard Leeuwenhart?", o:["Koning van Frankrijk","Koning van Engeland en kruisvaarder","Een beroemde boer","De paus"], c:1, u:"Richard I van Engeland was een van de beroemdste leiders van de Derde Kruistocht." },
+    { v:"Wat was een 'ambtenaar' in de tijd van Lodewijk XI?", o:["Iemand die vocht in de oorlog","Iemand die in dienst van de koning het land bestuurde","Een priester","Een rijke edelman"], c:1, u:"Ambtenaren vervingen de adel in het uitvoeren van wetten en rechtspraak." },
+    { v:"Wat was het 'Bayeux Tapijt'?", o:["Een kleed voor de koning","Een doek waarop de verovering van Engeland staat","Een kaart van Jeruzalem","Een lijst met belastingen"], c:1, u:"Dit 70 meter lange borduurwerk vertelt het verhaal van 1066." },
+    { v:"Wat betekent 'staatsvorming'?", o:["Een nieuw kasteel bouwen","Het creëren van een eenheid in een land","Vrede sluiten met de paus","De adel meer land geven"], c:1, u:"Het proces waarbij een koning de macht centraliseert en een land een eenheid maakt." },
+    { v:"Waarom was 1453 een belangrijk jaar?", o:["De Honderdjarige Oorlog eindigde","De eerste kruistocht begon","Willem veroverde Engeland","De Magna Charta werd getekend"], c:0, u:"In 1453 eindigde de strijd tussen Frankrijk en Engeland definitief." },
+    { v:"Wat was een 'beroepsleger'?", o:["Ridders die soms vochten","Betaalde soldaten die altijd in dienst waren","Boeren met hooivorken","De lijfwacht van de paus"], c:1, u:"Met een beroepsleger was de koning altijd klaar voor oorlog en niet afhankelijk van de adel." },
+    { v:"Hoe profiteerden steden zoals Venetië van de kruistochten?", o:["Ze werden verwoest","Ze werden rijk door handel en transport","Ze bleven hetzelfde","Ze verhuisden naar Frankrijk"], c:1, u:"De Italiaanse steden beheersten de zeeroutes naar het Heilige Land." },
+    { v:"Waarom was belasting op handel handig voor de koning?", o:["Het was makkelijk te innen in steden","Handelaren hadden geen wapens","De adel hield van belasting","Het was gratis"], c:0, u:"In de groeiende steden kon de koning effectief geld ophalen voor zijn bestuur." },
+    { v:"Wat was het uiteindelijke resultaat van de kruistochten voor Jeruzalem?", o:["Het bleef altijd christelijk","De moslims hielden de stad uiteindelijk in bezit","De stad werd verlaten","De stad werd Frans eigendom"], c:1, u:"Hoewel er veel kruistochten waren, bleven de moslims op de lange termijn de baas in de regio." }
+];
+
+let state = { currentIdx: 0, score: 0, answered: false };
+function $(id) { return document.getElementById(id); }
+
+function startGame() {
+    state = { currentIdx: 0, score: 0, answered: false };
+    $('screen-home').classList.remove('active');
+    $('screen-game').classList.add('active');
+    showQuestion();
+}
+
+function showQuestion() {
+    state.answered = false;
+    const q = questions[state.currentIdx];
+    $('q-cat').innerText = "Vraag " + (state.currentIdx + 1) + " / 40";
+    $('q-text').innerText = q.v;
+    $('explanation-box').innerText = q.u;
+    $('feedback-area').style.display = 'none';
+    const list = $('options-list');
+    list.innerHTML = '';
+    q.o.forEach((opt, i) => {
+        const div = document.createElement('div');
+        div.className = 'opt';
+        div.innerText = opt;
+        div.onclick = () => checkAnswer(i, div);
+        list.appendChild(div);
+    });
+    $('progress-fill').style.width = ((state.currentIdx + 1) / 40 * 100) + '%';
+}
+
+function checkAnswer(idx, el) {
+    if (state.answered) return;
+    state.answered = true;
+    const correct = questions[state.currentIdx].c;
+    if (idx === correct) {
+        el.classList.add('correct');
+        state.score++;
+    } else {
+        el.classList.add('wrong');
+        $('options-list').children[correct].classList.add('correct');
+    }
+    $('feedback-area').style.display = 'block';
+}
+
+$('next-btn').onclick = () => {
+    state.currentIdx++;
+    if (state.currentIdx < questions.length) {
+        showQuestion();
+    } else {
+        showResult();
+    }
+};
+
+function showResult() {
+    $('screen-game').classList.remove('active');
+    document.body.innerHTML = `<div class="screen active" style="justify-content:center; text-align:center;">
+        <h1 style="font-family:'Fredoka One'; font-size:3rem; color:#4ade80;">KLAAR!</h1>
+        <div class="q-card" style="margin:20px auto;">
+            <p style="font-size:1.5rem;">Je score is:</p>
+            <h2 style="font-size:4rem;">${Math.round(state.score/40*100)}%</h2>
+            <p>${state.score} van de 40 goed</p>
+        </div>
+        <button class="btn" onclick="location.reload()">OPNIEUW</button>
+    </div>`;
+}
+</script>
+</body>
+</html>
