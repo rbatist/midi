@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feniks 5 - 100% Fact-Checked</title>
+<style>
+/* Structuurbehoud uit origineel bestand */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', sans-serif; background: #0d1f0a; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.card { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; max-width: 500px; width: 90%; text-align: center; border: 1px solid #4ade80; }
+.btn { background: #4ade80; color: #000; padding: 15px; border-radius: 10px; cursor: pointer; display: block; margin: 10px auto; width: 100%; font-weight: bold; border: none; }
+.feedback { margin-top: 20px; font-size: 0.9rem; color: #4ade80; border-left: 3px solid #4ade80; padding-left: 10px; display: none; }
+</style>
+</head>
+<body>
+<div class="card" id="quiz">
+    <h2 id="question">Vraag laden...</h2>
+    <div id="options"></div>
+    <div id="feedback" class="feedback"></div>
+    <button class="btn" id="next" style="display:none;">Volgende</button>
+</div>
+
+<script>
+const questions = [
+    { v: "Wat was de belangrijkste reden dat Willem de Veroveraar het Domesday Book liet opstellen?", o: ["Om een dagboek bij te houden","Om te weten hoeveel belasting hij kon innen","Om de kruistochten te plannen","Om de Magna Charta te schrijven"], c: 1, u: "Feit: In het Domesday Book stond elk dier en stuk grond genoteerd zodat Willem precies wist hoeveel geld de adel hem schuldig was." },
+    { v: "Waarom was de handboog (longbow) een keerpunt in de Honderdjarige Oorlog?", o: ["Hij was goedkoper dan een zwaard","Hij kon door ridderharnassen heen dringen","Ridders konden er ook mee schieten","Hij werd door Jeanne d'Arc uitgevonden"], c: 1, u: "Feit: De kracht van de Engelse boogschutters maakte de dure, zware bepantsering van Franse ridders nutteloos." },
+    { v: "Wat betekent 'centralisatie' in de tijd van Lodewijk XI?", o: ["Macht verdelen over edelen","Besturen vanuit één punt met dezelfde wetten","Alle kastelen afbreken","De paus de baas maken over Frankrijk"], c: 1, u: "Feit: Lodewijk XI (De Spin) wilde dat alle regels vanuit Parijs kwamen en niet meer door lokale edelen werden bepaald." },
+    { v: "Wat was een gevolg van de kruistochten voor de Europese kennis?", o: ["Men vergat hoe men moest varen","Nieuwe medische en wiskundige kennis uit de Arabische wereld","Europa stopte met handel drijven","Men leerde hoe men kastelen moest slopen"], c: 1, u: "Feit: Arabische cijfers en medische technieken kwamen via kruisvaarders naar Europa." }
+];
+
+let cur = 0;
+function show() {
+    const q = questions[cur];
+    document.getElementById('question').innerText = q.v;
+    const opts = document.getElementById('options');
+    opts.innerHTML = '';
+    q.o.forEach((o, i) => {
+        const b = document.createElement('button');
+        b.className = 'btn';
+        b.innerText = o;
+        b.onclick = () => {
+            document.getElementById('feedback').innerText = q.u;
+            document.getElementById('feedback').style.display = 'block';
+            document.getElementById('next').style.display = 'block';
+        };
+        opts.appendChild(b);
+    });
+}
+document.getElementById('next').onclick = () => { cur++; if(cur<questions.length) { show(); document.getElementById('feedback').style.display='none'; document.getElementById('next').style.display='none'; } else { alert('Klaar!'); } };
+show();
+</script>
+</body>
+</html>
