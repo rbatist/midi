@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Feniks — Hoofdstuk 5 Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: #0d1f0a;
+  color: #fff;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+#confetti-canvas {
+  position: fixed; inset: 0; pointer-events: none; z-index: 999;
+}
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateX(30px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.screen.active { opacity: 1; pointer-events: all; transform: translateX(0); }
+.screen.exit { opacity: 0; transform: translateX(-30px); }
+
+/* ===== HOME ===== */
+.home-bg { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.star { position: absolute; font-size: 40px; animation: float 4s ease-in-out infinite; opacity: 0.15; }
+.s1{top:8%;left:5%;animation-delay:0s} .s2{top:15%;right:8%;animation-delay:1s}
+.s3{bottom:30%;left:10%;animation-delay:2s} .s4{bottom:15%;right:12%;animation-delay:0.5s}
+@keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-18px) rotate(12deg)} }
+.home-content {
+  position: relative; z-index: 1; width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; align-items: center; padding-top: 24px; gap: 16px;
+}
+.logo-badge {
+  background: linear-gradient(135deg, #4ade80, #22d3ee);
+  color: #0d1f0a; font-family: 'Fredoka One', cursive;
+  font-size: 13px; letter-spacing: 3px; padding: 5px 18px; border-radius: 99px;
+  box-shadow: 0 4px 20px rgba(74,222,128,0.5);
+}
+.game-title {
+  font-family: 'Fredoka One', cursive; font-size: 62px; line-height: 0.9;
+  text-align: center; color: #fff;
+  text-shadow: 0 4px 30px rgba(74,222,128,0.3);
+}
+.game-title span {
+  background: linear-gradient(135deg, #4ade80, #22d3ee);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.game-sub { font-size: 13px; color: rgba(255,255,255,0.45); letter-spacing: 1px; text-align: center; }
+.highscore-display {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 16px; padding: 10px 22px; font-size: 14px; color: rgba(255,255,255,0.7);
+  display: flex; align-items: center; gap: 8px;
+}
+.hs-icon { font-size: 18px; }
+.difficulty-picker { width: 100%; }
+.diff-label { font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; text-align: center; }
+.diff-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+.diff-btn {
+  background: rgba(255,255,255,0.07); border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 14px; color: rgba(255,255,255,0.6); font-family: 'Nunito', sans-serif;
+  font-size: 12px; font-weight: 700; padding: 10px 4px; cursor: pointer; transition: all 0.2s; line-height: 1.3;
+}
+.diff-btn small { font-size: 10px; font-weight: 400; display: block; opacity: 0.7; }
+.diff-btn.active {
+  background: linear-gradient(135deg, #166534, #15803d);
+  border-color: #4ade80; color: #fff; box-shadow: 0 4px 16px rgba(74,222,128,0.4);
+}
+.diff-btn:active { transform: scale(0.95); }
+.btn-start {
+  width: 100%; padding: 18px;
+  background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
+  border: none; border-radius: 20px; font-family: 'Fredoka One', cursive; font-size: 26px;
+  color: #0d1f0a; cursor: pointer; position: relative; overflow: hidden;
+  box-shadow: 0 8px 30px rgba(74,222,128,0.5); transition: transform 0.15s;
+  letter-spacing: 1px;
+}
+.btn-start:active { transform: scale(0.97); }
+.btn-shine {
+  position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shine 2.5s infinite;
+}
+@keyframes shine { 0%{left:-100%} 60%,100%{left:150%} }
+.btn-scores {
+  background: none; border: 1.5px solid rgba(255,255,255,0.2); border-radius: 14px;
+  color: rgba(255,255,255,0.5); font-family: 'Nunito', sans-serif; font-size: 14px;
+  font-weight: 600; padding: 10px 24px; cursor: pointer; transition: all 0.2s;
+}
+.btn-scores:active { background: rgba(255,255,255,0.1); }
+
+/* ===== COUNTDOWN ===== */
+#screen-countdown { background: #0d1f0a; justify-content: center; }
+.countdown-wrap { text-align: center; }
+.countdown-num {
+  font-family: 'Fredoka One', cursive; font-size: 140px; line-height: 1;
+  background: linear-gradient(135deg, #4ade80, #22d3ee);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: countPop 0.4s ease-out;
+}
+@keyframes countPop {
+  0%{transform:scale(0.3) rotate(-10deg);opacity:0} 70%{transform:scale(1.15) rotate(3deg)} 100%{transform:scale(1) rotate(0deg);opacity:1}
+}
+.countdown-label { font-size: 18px; color: rgba(255,255,255,0.5); margin-top: 12px; }
+
+/* ===== GAME ===== */
+#screen-game {
+  background: linear-gradient(160deg, #0d1f0a 0%, #0a1628 100%);
+  justify-content: flex-start; gap: 10px;
+  padding-top: max(env(safe-area-inset-top), 16px);
+}
+.game-header { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 420px; }
+.streak-badge {
+  background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.3);
+  border-radius: 99px; padding: 5px 12px; display: flex; align-items: center; gap: 4px;
+  font-family: 'Fredoka One', cursive; font-size: 16px; color: #4ade80; transition: transform 0.2s;
+}
+.streak-badge.bump { animation: bump 0.3s; }
+@keyframes bump { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+.q-counter { text-align: center; font-size: 13px; color: rgba(255,255,255,0.5); font-weight: 700; margin-bottom: 4px; }
+.progress-track { width: 120px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; }
+.progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #4ade80, #22d3ee); border-radius: 99px; transition: width 0.5s ease; }
+.score-pill {
+  background: rgba(34,211,238,0.15); border: 1px solid rgba(34,211,238,0.3);
+  border-radius: 99px; padding: 5px 12px; display: flex; align-items: center; gap: 4px;
+  font-family: 'Fredoka One', cursive; font-size: 16px; color: #22d3ee;
+}
+.timer-container { position: relative; width: 90px; height: 90px; flex-shrink: 0; align-self: center; }
+.timer-svg { width: 90px; height: 90px; transform: rotate(-90deg); }
+.timer-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 8; }
+.timer-fill { fill: none; stroke: #4ade80; stroke-width: 8; stroke-linecap: round; stroke-dasharray: 327; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.5s; }
+.timer-fill.warn { stroke: #f87171; }
+.timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'Fredoka One', cursive; font-size: 26px; color: #fff; }
+.question-card {
+  width: 100%; max-width: 420px; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 22px; padding: 16px 18px; flex-shrink: 0;
+}
+.q-hoofdstuk {
+  display: inline-block; background: linear-gradient(135deg, #166534, #15803d);
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  padding: 3px 10px; border-radius: 99px; margin-bottom: 4px; color: #fff;
+}
+.q-category { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.q-text { font-size: 16px; font-weight: 700; line-height: 1.4; color: #fff; }
+.answers-grid { width: 100%; max-width: 420px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex-shrink: 0; }
+.answer-btn {
+  padding: 12px 10px; background: rgba(255,255,255,0.07); border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 16px; color: #fff; font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; line-height: 1.3; transition: all 0.15s; min-height: 60px;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+}
+.answer-btn:active:not(:disabled) { transform: scale(0.96); }
+.answer-btn.correct { background: linear-gradient(135deg, #22c55e, #16a34a); border-color: #22c55e; box-shadow: 0 0 24px rgba(34,197,94,0.5); animation: correctPop 0.4s ease; }
+.answer-btn.wrong { background: linear-gradient(135deg, #ef4444, #b91c1c); border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.4); animation: shake 0.4s ease; }
+.answer-btn.reveal { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.4); }
+.answer-btn:disabled { cursor: default; }
+@keyframes correctPop { 0%{transform:scale(1)} 40%{transform:scale(1.08)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+.bonus-bar {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 99px; padding: 6px 18px; font-size: 12px; font-weight: 700;
+  color: rgba(255,255,255,0.5); text-align: center; align-self: center; transition: all 0.3s;
+}
+.bonus-bar.active { background: rgba(74,222,128,0.15); border-color: rgba(74,222,128,0.4); color: #4ade80; }
+
+/* ===== FEEDBACK ===== */
+#screen-feedback { background: rgba(13,31,10,0.97); justify-content: center; gap: 12px; backdrop-filter: blur(20px); }
+.feedback-wrap { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px; }
+.feedback-emoji { font-size: 72px; animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes popIn { 0%{transform:scale(0) rotate(-20deg)} 100%{transform:scale(1) rotate(0deg)} }
+.feedback-title { font-family: 'Fredoka One', cursive; font-size: 40px; text-align: center; }
+.feedback-title.good { color: #4ade80; }
+.feedback-title.bad { color: #f87171; }
+.feedback-pts { font-family: 'Fredoka One', cursive; font-size: 26px; color: #22d3ee; opacity: 0; animation: fadeUp 0.4s 0.2s ease forwards; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.feedback-explanation {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 14px 16px; font-size: 14px; line-height: 1.6;
+  color: rgba(255,255,255,0.8); width: 100%;
+}
+.feedback-answer { font-size: 13px; color: rgba(255,255,255,0.4); font-style: italic; }
+.btn-next {
+  width: 100%; padding: 16px; background: linear-gradient(135deg, #166534, #15803d);
+  border: none; border-radius: 18px; font-family: 'Fredoka One', cursive; font-size: 22px;
+  color: #fff; cursor: pointer; box-shadow: 0 6px 24px rgba(74,222,128,0.3); transition: transform 0.15s;
+}
+.btn-next:active { transform: scale(0.97); }
+
+/* ===== RESULT ===== */
+#screen-result { background: linear-gradient(160deg, #0d1f0a 0%, #0a1628 100%); justify-content: flex-start; padding-top: 24px; }
+.result-wrap { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 12px; padding-bottom: 40px; }
+.result-trophy { font-size: 80px; animation: trophyBounce 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes trophyBounce { 0%{transform:scale(0) translateY(-40px);opacity:0} 100%{transform:scale(1) translateY(0);opacity:1} }
+.result-title { font-family: 'Fredoka One', cursive; font-size: 36px; text-align: center; color: #4ade80; }
+.result-score-big {
+  font-family: 'Fredoka One', cursive; font-size: 80px; line-height: 1;
+  background: linear-gradient(135deg, #4ade80, #22d3ee);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.result-sub { font-size: 14px; color: rgba(255,255,255,0.4); letter-spacing: 2px; margin-top: -8px; }
+.result-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; width: 100%; }
+.stat-box { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 12px 6px; text-align: center; }
+.stat-num { font-family: 'Fredoka One', cursive; font-size: 24px; color: #4ade80; }
+.stat-lbl { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; letter-spacing: 0.5px; }
+.new-record {
+  background: linear-gradient(135deg, #4ade80, #22d3ee); color: #0d1f0a;
+  font-family: 'Fredoka One', cursive; font-size: 20px; padding: 10px 28px; border-radius: 99px;
+  box-shadow: 0 6px 24px rgba(74,222,128,0.5); animation: pulse 1s infinite;
+}
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+.result-btns { display: flex; gap: 10px; width: 100%; }
+.btn-play-again {
+  flex: 1; padding: 14px; background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 16px; color: #fff; font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-play-again.btn-retry { background: linear-gradient(135deg, #166534, #15803d); border-color: #4ade80; box-shadow: 0 4px 16px rgba(74,222,128,0.3); }
+.btn-play-again:active { transform: scale(0.96); }
+.wrong-list { width: 100%; }
+.wrong-list-title { font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; text-align: center; }
+.wrong-item { background: rgba(255,68,68,0.07); border: 1px solid rgba(255,68,68,0.15); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
+.wrong-item-q { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.8); margin-bottom: 6px; }
+.wrong-item-a { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 2px; }
+.wrong-item-a span.correct-ans { color: #4ade80; font-weight: 700; }
+.wrong-item-expl { font-size: 12px; color: rgba(255,255,255,0.4); font-style: italic; line-height: 1.5; }
+
+/* ===== SCOREBOARD ===== */
+#screen-scores { background: linear-gradient(160deg, #0d1f0a 0%, #0a1628 100%); justify-content: flex-start; padding-top: 24px; gap: 16px; }
+.scores-wrap { width: 100%; max-width: 400px; }
+.btn-back { background: none; border: 1.5px solid rgba(255,255,255,0.2); border-radius: 12px; color: rgba(255,255,255,0.6); font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; padding: 8px 18px; cursor: pointer; margin-bottom: 12px; }
+.scores-title { font-family: 'Fredoka One', cursive; font-size: 32px; color: #4ade80; text-align: center; margin-bottom: 16px; }
+.scores-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.score-entry { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 12px 16px; }
+.score-rank { font-family: 'Fredoka One', cursive; font-size: 22px; width: 32px; text-align: center; }
+.score-info { flex: 1; }
+.score-pts { font-family: 'Fredoka One', cursive; font-size: 20px; color: #4ade80; }
+.score-meta { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.score-entry:nth-child(1) .score-rank{color:#ffd700}
+.score-entry:nth-child(2) .score-rank{color:#c0c0c0}
+.score-entry:nth-child(3) .score-rank{color:#cd7f32}
+.no-scores { text-align: center; color: rgba(255,255,255,0.3); font-size: 15px; padding: 40px; }
+.btn-clear-scores { width: 100%; background: none; border: 1px solid rgba(255,68,68,0.3); border-radius: 12px; color: rgba(255,68,68,0.5); font-family: 'Nunito', sans-serif; font-size: 13px; padding: 10px; cursor: pointer; }
+.score-popup { position: fixed; font-family: 'Fredoka One', cursive; font-size: 28px; color: #4ade80; pointer-events: none; z-index: 100; text-shadow: 0 2px 12px rgba(0,0,0,0.5); animation: floatUp 1s ease forwards; }
+@keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-80px) scale(1.3)} }
+::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="home-bg">
+    <div class="star s1">⚔️</div>
+    <div class="star s2">🏰</div>
+    <div class="star s3">✝️</div>
+    <div class="star s4">👑</div>
+  </div>
+  <div class="home-content">
+    <div class="logo-badge">FENIKS H5</div>
+    <h1 class="game-title">Koningen,<br><span>Kastelen &</span><br>Kruistochten</h1>
+    <p class="game-sub">Geschiedenis havo/vwo 1 &nbsp;·&nbsp; Paragraaf 5.1 – 5.4</p>
+    <div class="highscore-display" id="home-highscore">
+      <span class="hs-icon">🏆</span>
+      <span id="hs-text">Nog geen highscore</span>
+    </div>
+    <div class="difficulty-picker">
+      <div class="diff-label">Aantal vragen</div>
+      <div class="diff-btns">
+        <button class="diff-btn active" data-diff="10">Snel<br><small>10 vr</small></button>
+        <button class="diff-btn" data-diff="20">Normaal<br><small>20 vr</small></button>
+        <button class="diff-btn" data-diff="50">Uitdaging<br><small>50 vr</small></button>
+        <button class="diff-btn" data-diff="100">🔥 Alles<br><small>100 vr</small></button>
+      </div>
+    </div>
+    <button class="btn-start" id="btn-start"><span>SPELEN!</span><div class="btn-shine"></div></button>
+    <button class="btn-scores" onclick="showScreen('screen-scores')">🏅 Scorebord</button>
+  </div>
+</div>
+
+<!-- COUNTDOWN -->
+<div id="screen-countdown" class="screen">
+  <div class="countdown-wrap">
+    <div id="countdown-num" class="countdown-num">3</div>
+    <div class="countdown-label">Klaar voor de start?</div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen">
+  <div class="game-header">
+    <div class="hdr-left">
+      <div class="streak-badge" id="streak-badge">
+        <span class="streak-fire">🔥</span>
+        <span id="streak-count">0</span>
+      </div>
+    </div>
+    <div class="hdr-center">
+      <div class="q-counter" id="q-counter">1 / 10</div>
+      <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+    </div>
+    <div class="hdr-right">
+      <div class="score-pill" id="score-pill">
+        <span class="score-icon">⭐</span>
+        <span id="live-score">0</span>
+      </div>
+    </div>
+  </div>
+  <div class="timer-container">
+    <svg class="timer-svg" viewBox="0 0 120 120">
+      <circle class="timer-bg" cx="60" cy="60" r="52"/>
+      <circle class="timer-fill" id="timer-fill" cx="60" cy="60" r="52"/>
+    </svg>
+    <div class="timer-text" id="timer-text">15</div>
+  </div>
+  <div class="question-card" id="question-card">
+    <div class="q-hoofdstuk" id="q-hoofdstuk">5.1</div>
+    <div class="q-category" id="q-category">Geschiedenis</div>
+    <div class="q-text" id="q-text">Laadt vraag...</div>
+  </div>
+  <div class="answers-grid" id="answers-grid"></div>
+  <div class="bonus-bar" id="bonus-bar"><span id="bonus-text">⚡ 1× punten</span></div>
+</div>
+
+<!-- FEEDBACK -->
+<div id="screen-feedback" class="screen">
+  <div class="feedback-wrap">
+    <div class="feedback-emoji" id="fb-emoji">✅</div>
+    <div class="feedback-title" id="fb-title">Goed!</div>
+    <div class="feedback-pts" id="fb-pts">+100</div>
+    <div class="feedback-explanation" id="fb-explanation"></div>
+    <div class="feedback-answer" id="fb-answer"></div>
+    <button class="btn-next" id="btn-next">Volgende →</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+  <div class="result-wrap">
+    <div class="result-trophy" id="result-trophy">🏆</div>
+    <h2 class="result-title" id="result-title">Geweldig!</h2>
+    <div class="result-score-big" id="result-score-big">0</div>
+    <div class="result-sub">punten</div>
+    <div class="result-stats">
+      <div class="stat-box"><div class="stat-num" id="stat-correct">0</div><div class="stat-lbl">Goed</div></div>
+      <div class="stat-box"><div class="stat-num" id="stat-wrong">0</div><div class="stat-lbl">Fout</div></div>
+      <div class="stat-box"><div class="stat-num" id="stat-streak">0</div><div class="stat-lbl">Max streak</div></div>
+      <div class="stat-box"><div class="stat-num" id="stat-pct">0%</div><div class="stat-lbl">Score</div></div>
+    </div>
+    <div class="new-record" id="new-record" style="display:none">🎉 NIEUW RECORD!</div>
+    <div class="result-btns">
+      <button class="btn-play-again" onclick="goHome()">🏠 Terug</button>
+      <button class="btn-play-again btn-retry" onclick="restartGame()">🔄 Opnieuw</button>
+    </div>
+    <div class="wrong-list" id="wrong-list"></div>
+  </div>
+</div>
+
+<!-- SCOREBOARD -->
+<div id="screen-scores" class="screen">
+  <div class="scores-wrap">
+    <button class="btn-back" onclick="goHome()">← Terug</button>
+    <h2 class="scores-title">🏅 Top Scores</h2>
+    <div id="scores-list" class="scores-list"></div>
+    <button class="btn-clear-scores" onclick="clearScores()">Wis scores</button>
+  </div>
+</div>
+
+<script>
+// =============================================
+// FENIKS H5 — 100 VRAGEN
+// 5.1 Normandiërs veroveren Engeland
+// 5.2 De Honderdjarige Oorlog
+// 5.3 Centralisatie in Frankrijk
+// 5.4 De Kruistochten
+// =============================================
+
+const ALLE_VRAGEN = [
+
+  // ──────────── PARAGRAAF 5.1 — Normandiërs veroveren Engeland ────────────
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"In welk jaar vond de slag bij Hastings plaats?",
+    o:["1066","1095","1215","1099"], c:0,
+    u:"De slag bij Hastings was in 1066. De Normandische hertog Willem versloeg de Engelse graaf Harold en werd koning van Engeland."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Wie waren de twee kandidaten voor de Engelse troon na de dood van koning Edward?",
+    o:["Harold en Eduard","Willem en Harold","Karel en Harold","Willem en Thomas"], c:1,
+    u:"Na de dood van de kinderloze koning Edward was er strijd tussen de Engelse graaf Harold en de Normandische hertog Willem. Die strijd eindigde met de slag bij Hastings."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Wie won de slag bij Hastings?",
+    o:["Harold","Willem de Veroveraar","Koning Edward","Thomas Becket"], c:1,
+    u:"Willem de Veroveraar (hertog van Normandië) won de slag bij Hastings en werd daarna op 25 december 1066 gekroond tot koning van Engeland."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Wat kregen de Normandiërs die Willem hadden geholpen als beloning?",
+    o:["Goud en zilver","Een stuk land in leen","Een adellijke titel","Een plek in de adviesraad"], c:1,
+    u:"De Normandiërs die Willem hadden geholpen, werden zijn vazallen en kregen land in leen — afgepakt van de Engelse adel. Op hun landerijen bouwden zij kastelen."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Wat bouwden de Normandiërs op hun nieuwe landerijen in Engeland?",
+    o:["Kloosters","Kastelen","Steden","Havens"], c:1,
+    u:"De Normandische vazallen van Willem bouwden kastelen op hun landerijen om hun macht te tonen en het gebied te verdedigen."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Wat was de centrale rekenkamer?",
+    o:["Een soort bank voor kooplieden","Een groep mensen die de inkomsten en uitgaven van de koning controleerde","Een vergadering van edelen","Een rechtbank voor belastingzaken"], c:1,
+    u:"Na de verovering van Engeland werd het bestuur goed geregeld. Er kwam een centrale rekenkamer: een groep mensen die de inkomsten en uitgaven van de koning controleerde."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Waarover ontstond een conflict tussen de koning en de kerk in Engeland?",
+    o:["Over het heffen van belastingen","Over het benoemen van bisschoppen","Over rechtbanken","Over het bouwen van kloosters"], c:2,
+    u:"Er ontstond een conflict tussen de Engelse koning en de kerk over rechtbanken — wie mocht er recht spreken over geestelijken? Dit conflict leidde uiteindelijk tot de moord op aartsbisschop Thomas Becket."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Wie werd vermoord door ridders van de Engelse koning?",
+    o:["Paus Urbanus","Willem de Veroveraar","Thomas Becket","Harold"], c:2,
+    u:"Aartsbisschop Thomas Becket werd vermoord. Hij had ruzie met koning Hendrik II over de vraag wie er recht mocht spreken over geestelijken. De ridders van de koning doodden hem in de kathedraal van Canterbury."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Wat was de Magna Charta?",
+    o:["Een belastingwet van de koning","Een document uit 1215 waarin stond dat ook de koning zich aan de wet moest houden","Een verdrag tussen Engeland en Frankrijk","Een kruistochtopdracht van de paus"], c:1,
+    u:"De Magna Charta (1215) was een document waarbij de Engelse adel afdwong dat ook de koning zich aan regels moest houden, bijvoorbeeld over belastingen en straffen. Het is een belangrijk moment in de geschiedenis van de rechtsstaat."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"In welk jaar werd de Magna Charta ondertekend?",
+    o:["1066","1095","1215","1337"], c:2,
+    u:"De Magna Charta werd in 1215 ondertekend. Hierin legden de Engelse adel en de koning regels vast — onder andere dat de koning belasting niet zomaar mocht verhogen."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Waarvandaan kwamen de Normandiërs die Engeland veroverden?",
+    o:["Uit Duitsland","Uit Normandië (een deel van Frankrijk)","Uit Scandinavië","Uit Italië"], c:1,
+    u:"De Normandiërs kwamen uit Normandië, een gebied in het noorden van wat nu Frankrijk is. Ze spraken Frans en brachten hun taal en cultuur mee naar Engeland."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Wat betekent het dat Willem de Normandiërs land 'in leen' gaf?",
+    o:["Hij verkocht het land aan hen","Hij gaf het land cadeau zonder voorwaarden","Ze mochten het land gebruiken, maar moesten daarvoor diensten leveren aan Willem","Ze pachtten het land en betaalden huur"], c:2,
+    u:"Land 'in leen geven' betekent: je mag het land gebruiken, maar je moet daarvoor bepaalde diensten leveren aan degene die jou het land geeft (de leenheer). Dit systeem heet het leenstelsel of feodalisme."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Welk gevolg had de verovering van Engeland voor het bestuur van het land?",
+    o:["Er werd helemaal geen nieuw bestuur ingevoerd","Er kwamen nieuwe regels en een centrale rekenkamer voor de koninklijke belastingen","Engeland werd bestuurd vanuit Normandië","De kerk nam de macht over"], c:1,
+    u:"Na de verovering werd het Engelse bestuur goed georganiseerd. Er kwamen nieuwe regels en een centrale rekenkamer die de inkomsten en uitgaven van de koning controleerde — een vroege vorm van staatsorganisatie."
+  },
+
+  // ──────────── PARAGRAAF 5.2 — De Honderdjarige Oorlog ────────────
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"In welk jaar begon de Honderdjarige Oorlog?",
+    o:["1215","1337","1346","1429"], c:1,
+    u:"De Honderdjarige Oorlog begon in 1337 en duurde tot 1453. De Engelse koning Edward III begon de oorlog tegen Frankrijk."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wie begon de Honderdjarige Oorlog en tegen wie?",
+    o:["De Franse koning tegen Engeland","De Engelse koning Edward III tegen Frankrijk","De paus tegen Engeland","Willem de Veroveraar tegen Frankrijk"], c:1,
+    u:"De Engelse koning Edward III begon in 1337 de oorlog tegen Frankrijk. Hij had meerdere redenen: hij wilde land terug, hij vond dat hij recht had op de Franse troon, en hij wilde de handel beschermen."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wat was GEEN reden voor Edward III om de oorlog te beginnen?",
+    o:["De Franse koning had land van Edward ingenomen","Edward wilde de Franse troon","Edward wilde de Schotten helpen","Edward was bezorgd om de handel met Vlaanderen"], c:2,
+    u:"Edward wilde de Schotten NIET helpen — de Franse koning steunde juist de Schotten, die vijanden van de Engelsen waren. Dát was een reden voor Edward om de oorlog te beginnen."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Waarom wonnen de Engelsen de slag bij Crécy (1346)?",
+    o:["Het Engelse leger was groter","De Engelsen hadden boogschutters die heel snel konden schieten","De Fransen vluchtten voor de strijd","De Engelse ridders waren beter gepantserd"], c:1,
+    u:"Het Engelse leger had boogschutters uit Wales die razendsnel konden schieten. Het grotere Franse leger leed een zware nederlaag, hoewel ze met meer man waren."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wat was het verschil tussen het Franse en het Engelse leger tijdens de Honderdjarige Oorlog?",
+    o:["De Fransen hadden meer boogschutters, de Engelsen meer ridders","De Fransen vochten met dure ridders, de Engelsen met goed betaalde huurlingen","De Fransen gebruikten kanonnen, de Engelsen niet","De Engelsen hadden een groter leger"], c:1,
+    u:"De Fransen bleven vechten met dure ridders, terwijl de Engelsen goed betaalde huurlingen en boogschutters gebruikten. De huurlingstrategie bleek veel effectiever."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wie was Jeanne d'Arc?",
+    o:["Een Franse koningin","Een eenvoudig boerenmeisje dat beweerde goddelijke stemmen te horen en Frankrijk redde","Een Engelse spion","De vrouw van de Franse koning"], c:1,
+    u:"Jeanne d'Arc was een gewoon boerenmeisje dat zei dat ze stemmen van God hoorde. Ze won het vertrouwen van de Franse koning, nam de stad Orléans in (1429) en gaf de Fransen weer moed om te vechten."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Welke stad veroverde Jeanne d'Arc in 1429?",
+    o:["Parijs","Bordeaux","Orléans","Crécy"], c:2,
+    u:"In 1429 nam Jeanne d'Arc de stad Orléans in. Dit was een keerpunt in de Honderdjarige Oorlog — de Fransen kregen weer vertrouwen en heroverden steeds meer gebied."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Hoe eindigde de Honderdjarige Oorlog?",
+    o:["Engeland won en bezette heel Frankrijk","Frankrijk won en de Engelsen verloren hun land in Frankrijk","Het eindigde onbeslist","De paus maakte een einde aan de oorlog"], c:1,
+    u:"De Honderdjarige Oorlog eindigde in 1453 in het voordeel van Frankrijk. De Engelse koning raakte zijn grondgebied in Frankrijk kwijt."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wat was een gevolg van de Honderdjarige Oorlog in beide landen?",
+    o:["Beide landen werden één rijk","In beide landen werd het nationale gevoel sterker","Beide landen werden zwakker","De paus kreeg meer macht in beide landen"], c:1,
+    u:"Een belangrijk gevolg was dat het nationale gevoel in zowel Frankrijk als Engeland sterker werd. Mensen voelden zich meer 'Frans' of 'Engels'. Dit was een stap richting nationale staten."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Hoe lang duurde de Honderdjarige Oorlog?",
+    o:["Precies 100 jaar","116 jaar (1337-1453)","50 jaar","200 jaar"], c:1,
+    u:"De Honderdjarige Oorlog duurde van 1337 tot 1453 — dat is 116 jaar. De naam 'Honderdjarige Oorlog' is dus niet precies, maar hij geeft aan dat het een heel lange strijd was."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Welk gevolg had de Honderdjarige Oorlog voor de macht in Engeland?",
+    o:["De koning kreeg veel meer macht","De adel en het parlement kregen steeds meer macht","De kerk nam de macht over","Er veranderde niets"], c:1,
+    u:"In Engeland kregen de adel en het parlement (de adviesraad van de koning met edelen en geestelijken) steeds meer macht. In Frankrijk gebeurde het tegenovergestelde: daar werd de koning juist sterker."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wat was Aquitanië in de context van de Honderdjarige Oorlog?",
+    o:["Een Engelse stad","Een leen van de Engelse koning in Frankrijk","Een bondgenoot van de Fransen","Een eiland in de Noordzee"], c:1,
+    u:"Aquitanië was een gebied in het zuiden van wat nu Frankrijk is. De Engelse koning had het als leen — maar de Franse koning nam een deel ervan in. Dat was één van de redenen voor Edward III om de oorlog te beginnen."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wat was de rol van Bourgondië in de Honderdjarige Oorlog?",
+    o:["Bourgondië vocht altijd aan de kant van Frankrijk","Bourgondië was een bondgenoot van Engeland, maar stapte later over naar Frankrijk","Bourgondië bleef neutraal","Bourgondië startte de oorlog"], c:1,
+    u:"Bourgondië was lange tijd bondgenoot van Engeland. Toen de Engelsen hun bondgenoot Bourgondië kwijtraakten, werd de oorlog in het voordeel van Frankrijk beslist."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wat waren huurlingen?",
+    o:["Boeren die gedwongen moesten meevechten","Betaalde soldaten die voor geld vochten","Ridders met eigen landerijen","Zeelieden die schepen bewaakten"], c:1,
+    u:"Huurlingen waren soldaten die voor geld vochten. De Engelsen gebruikten goed betaalde huurlingen, in plaats van dure ridders zoals de Fransen. Dit bleek een effectievere strategie."
+  },
+
+  // ──────────── PARAGRAAF 5.3 — Centralisatie in Frankrijk ────────────
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wat betekent centralisatie?",
+    o:["Elk gebied heeft zijn eigen wetten","De koning bestuurde zijn grondgebied vanuit één centraal punt","De kerk regeerde het land","Steden kregen meer zelfstandigheid"], c:1,
+    u:"Centralisatie betekent dat een koning vanuit één centraal punt zijn hele grondgebied probeert te besturen, met dezelfde regels voor iedereen. Dat was precies wat de Franse koningen wilden bereiken."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Welke maatregelen nam Karel VII om meer macht te krijgen?",
+    o:["Hij riep de Staten-Generaal vaker bijeen","Hij reorganiseerde de adviesraad, hief belastingen, stelde een staand leger in en mocht bisschoppen benoemen","Hij gaf de hertogen meer macht","Hij sloot een verbond met Engeland"], c:1,
+    u:"Karel VII nam meerdere maatregelen: hij reorganiseerde zijn adviesraad, hief belastingen op zout en land, stelde een staand leger in, en kreeg het recht om bisschoppen te benoemen. Zo vergrootte hij zijn macht."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wat was een staand leger?",
+    o:["Een leger dat alleen in oorlogstijd werd opgeroepen","Een permanent leger van huursoldaten waarover de koning altijd kon beschikken","Een leger van ridders die voor de kerk vochten","Een leger dat uit boeren bestond"], c:1,
+    u:"Een staand leger is een permanent bestaand leger van huursoldaten. De koning hoefde niet meer te wachten tot hij edelen opriep — hij had altijd soldaten beschikbaar. Dit gaf de koning veel meer macht."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Welke bijnaam had Lodewijk XI?",
+    o:["De Veroveraar","De Spin","De Grote","De Heilige"], c:1,
+    u:"Lodewijk XI werd 'de Spin' genoemd. Net als een spin bouwde hij slim een web van macht op door slimme politiek, bondgenootschappen en het uitspelen van zijn vijanden tegen elkaar."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Waarom steunde Lodewijk XI de steden en de handel?",
+    o:["Omdat hij van kooplieden hield","Om de steun van rijke burgers te krijgen","Omdat de kerk hem dat vroeg","Om de adel te belonen"], c:1,
+    u:"Lodewijk XI bevorderde de handel en ambachten in steden omdat hij de steun wilde van rijke burgers. Die burgers waren een tegenwicht voor de macht van de adel."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wie was de grootste vijand van Lodewijk XI?",
+    o:["De paus","De hertog van Bourgondië","De Engelse koning","Zijn eigen broer"], c:1,
+    u:"De hertog van Bourgondië was de grootste vijand van Lodewijk XI. Lodewijk slaagde er uiteindelijk in om de macht van de hertogen, en met name die van Bourgondië, sterk te verminderen."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wat was de Staten-Generaal?",
+    o:["Het Engelse parlement","Een vergadering van vertegenwoordigers van de drie standen die de Franse koning kon bijeenroepen","De adviesraad van de paus","Een rechtbank voor belastingzaken"], c:1,
+    u:"De Staten-Generaal was een vergadering van vertegenwoordigers van de drie standen (adel, geestelijkheid en burgers) die de Franse koning bijeen kon roepen. Hij deed dat echter nauwelijks — hij wilde zelf de macht houden."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wat was een nationale staat?",
+    o:["Een land met heel veel steden","Een staat waar mensen het gevoel hebben één volk te zijn met dezelfde taal en cultuur","Een land bestuurd door de kerk","Een land met een sterk leger"], c:1,
+    u:"Een nationale staat is een staat waar mensen het gevoel hebben dat ze bij elkaar horen — ze spreken vaak dezelfde taal, hebben dezelfde cultuur, en soms dezelfde godsdienst. Frankrijk was aan het einde van de 15e eeuw een nationale staat aan het worden."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wie was Philippe de Commynes?",
+    o:["Een generaal van Karel VII","Een raadgever van Lodewijk XI die oorspronkelijk uit het kamp van Bourgondië kwam","Een bisschop die tegen de koning vocht","De leider van de boogschutters"], c:1,
+    u:"Philippe de Commynes was een slimme raadgever die Lodewijk XI in 1472 in dienst nam. Het slimme eraan: hij kwam uit het kamp van de hertog van Bourgondië, Lodewijks grootste vijand!"
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wat deed Lodewijk XI met steden die te zelfstandig werden?",
+    o:["Hij steunde ze extra","Hij trad er hard tegen op","Hij liet ze met rust","Hij vroeg de paus om advies"], c:1,
+    u:"Lodewijk XI steunde steden en handel om macht te vergaren, maar trad ook hard op tegen steden die te zelfstandig werden. Hij wilde één sterk centraal bestuur."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wat was een adviesraad?",
+    o:["Een groep soldaten van de koning","Een groep raadgevers die de koning hielp beslissingen te nemen","Een vergadering van bisschoppen","Een rechtbank"], c:1,
+    u:"Een adviesraad was een kleine kring van vertrouwelingen die de koning hielpen bij het nemen van beslissingen. Lodewijk XI hield zijn adviesraad bewust klein en beloonde zijn raadgevers goed."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wat was het gevolg van de centralisatiepolitiek in Frankrijk voor de hertogen?",
+    o:["De hertogen kregen meer macht","De macht van de hertogen werd sterk verminderd","De hertogen werden allemaal gevangen gezet","De hertogen werden koningen van hun eigen gebied"], c:1,
+    u:"Door de slimme politiek van Lodewijk XI — bondgenootschappen sluiten, vijanden uitspelen, rijke burgers steunen — werd de macht van de hertogen, met name van Bourgondië, sterk verminderd."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Waarom was het slim van Lodewijk XI om Philippe de Commynes in dienst te nemen?",
+    o:["Omdat hij een goede soldaat was","Omdat hij uit het kamp van Bourgondië (Lodewijks vijand) kwam en nu voor Lodewijk werkte","Omdat hij veel geld had","Omdat hij de paus kende"], c:1,
+    u:"Door iemand uit het kamp van zijn grootste vijand in dienst te nemen, verzwakte Lodewijk de hertog van Bourgondië en versterkte hij zichzelf tegelijk. Zo slim werkte 'de spin'."
+  },
+
+  // ──────────── PARAGRAAF 5.4 — De Kruistochten ────────────
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Wie riep in 1095 op tot de eerste kruistocht?",
+    o:["Koning Willem I","Paus Urbanus II","Lodewijk XI","Karel VII"], c:1,
+    u:"In 1095 riep paus Urbanus II alle christenen op om op kruistocht te gaan. Hij wilde dat christelijke ridders Jeruzalem zouden bevrijden van de moslims."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Wat was het doel van de eerste kruistocht?",
+    o:["Engeland veroveren","Jeruzalem bevrijden van de moslims","De paus beschermen in Rome","Byzantijnse Rijk uitbreiden"], c:1,
+    u:"Het doel was Jeruzalem te bevrijden van de moslims (de Seldjoeken). Jeruzalem was een heilige stad voor zowel christenen als moslims als joden."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Waarom was Jeruzalem zo belangrijk voor christenen?",
+    o:["Omdat de paus er woonde","Omdat Jezus er was gestorven en begraven","Omdat er veel goud was","Omdat het de hoofdstad was van het Byzantijnse Rijk"], c:1,
+    u:"Jeruzalem was de heiligste stad voor christenen omdat Jezus er was gekruisigd, begraven en opgestaan. Christenen wilden graag op bedevaart naar die heilige plekken."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Wat was een pelgrim?",
+    o:["Een soldaat die voor de paus vocht","Iemand die naar heilige plaatsen reisde om te bidden","Een moslimstrijder","Een adviseur van de paus"], c:1,
+    u:"Een pelgrim was iemand die een bedevaart maakte — hij of zij reisde naar een heilige plaats om te bidden en zonden goed te maken. Christenen reisden graag naar Jeruzalem."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Wie waren de Seldjoeken?",
+    o:["Christelijke ridders","Moslimstrijders die Jeruzalem hadden veroverd","Bondgenoten van de paus","Normandische soldaten"], c:1,
+    u:"De Seldjoeken waren moslimstrijders die in 1071 Jeruzalem veroverden. Ze maakten het voor christelijke pelgrims moeilijker om de heilige stad te bezoeken. Dit was één van de redenen voor de kruistochten."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Wat was het Byzantijnse Rijk?",
+    o:["Het rijk van de Frankische koningen","Het oude Oost-Romeinse Rijk met als hoofdstad Constantinopel","Het koninkrijk Jeruzalem","Het rijk van de moslims"], c:1,
+    u:"Het Byzantijnse Rijk was het oude Oost-Romeinse Rijk, met als hoofdstad Constantinopel (het huidige Istanbul). Het was christelijk en vroeg de paus om hulp toen het bedreigd werd door de Seldjoeken."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Wanneer veroverden de kruisvaarders Jeruzalem?",
+    o:["1066","1071","1095","1099"], c:3,
+    u:"In 1099 veroverden de kruisvaarders Jeruzalem. De eerste kruistocht (1096-1099) was dus succesvol — al was de verovering gepaard gegaan met veel geweld."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Waarvoor gingen christenen op bedevaart?",
+    o:["Om land te veroveren","Om voor hun zonden te boeten en een grotere kans op de hemel te maken","Om handel te drijven","Om de paus te bezoeken in Rome"], c:1,
+    u:"Christenen geloofden dat je door een bedevaart naar heilige plaatsen te maken, kon boeten voor je zonden. Ze dachten dat dit hun kansen op een plek in de hemel vergrootte."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Wat was het Heilige Land?",
+    o:["Rome, de stad van de paus","Constantinopel, hoofdstad van het Byzantijnse Rijk","Palestina, het land dat God volgens de Bijbel aan het volk Israël had beloofd","Normandië, het thuisland van de kruisvaarders"], c:2,
+    u:"Het Heilige Land was Palestina — het gebied rond Jeruzalem. Volgens de Bijbel had God dit land aan het volk Israël beloofd. Voor christenen, moslims én joden was dit een heilig gebied."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Hoeveel grote kruistochten waren er in totaal?",
+    o:["Twee","Vier","Zeven","Tien"], c:2,
+    u:"Er waren in totaal zeven kruistochten (1096-1291). De eerste kruistocht (1096-1099) was de enige die echt succesvol was — Jeruzalem werd ingenomen. Bij latere kruistochten lukte dat niet meer."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Wat was een gevolg van de kruistochten voor de handel?",
+    o:["De handel stopte volledig","De handel met het Midden-Oosten groeide — kruisvaarders kwamen terug met nieuwe producten en ideeën","De handel werd alleen maar in Europa gedreven","Kooplieden werden verboden te reizen"], c:1,
+    u:"De kruistochten hadden als neveneffect dat de contacten met het Midden-Oosten toenamen. Kruisvaarders kwamen terug met nieuwe producten, specerijen en ideeën, wat de Europese handel stimuleerde."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Waarom riep de paus op tot een kruistocht in 1095?",
+    o:["Om zijn eigen macht uit te breiden in Europa","Om christenen te helpen bij hun bedevaart naar Jeruzalem en het Byzantijnse Rijk te helpen","Om de Engelse koning te straffen","Om belasting te heffen op pelgrims"], c:1,
+    u:"Paus Urbanus II riep op tot de kruistocht om twee redenen: het Byzantijnse Rijk vroeg om hulp tegen de Seldjoeken, én Jeruzalem was in handen van moslims en christenen konden er moeilijk op bedevaart."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"In welk jaar verwoestten de moslims de Heilig Grafkerk in Jeruzalem?",
+    o:["1009","1066","1071","1095"], c:0,
+    u:"In 1009 werd de Heilig Grafkerk in Jeruzalem verwoest. Dit maakte veel christenen in Europa erg kwaad en droeg bij aan de roep om Jeruzalem terug te veroveren."
+  },
+
+  // ──────────── GEMENGDE HERHAALVRAGEN (tot 100) ────────────
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Welke taal spraken de Normandiërs die Engeland veroverden?",
+    o:["Engels","Latijn","Frans","Arabisch"], c:2,
+    u:"De Normandiërs kwamen uit Normandië (Noord-Frankrijk) en spraken Frans. Na de verovering werd Frans de taal van de elite in Engeland, waardoor het hedendaagse Engels veel Franse woorden heeft."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"In welk jaar won Engeland de slag bij Crécy?",
+    o:["1337","1346","1429","1453"], c:1,
+    u:"De slag bij Crécy was in 1346. De Engelse boogschutters versloegen het grotere Franse leger. De Fransen leerden hier niets van en bleven ridders inzetten."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wat zijn belastingen op zout en land?",
+    o:["Geld dat burgers betalen aan de kerk","Geld dat burgers en boeren betalen aan de koning","Betaling voor het gebruik van wegen","Vergoeding voor militaire dienst"], c:1,
+    u:"Belastingen zijn geld dat mensen aan de overheid (in dit geval de koning) betalen. Karel VII hief belastingen op zout en land om zijn schatkist te vullen en zijn leger te betalen."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Welke godsdienst kwamen de kruisvaarders tegen in het Midden-Oosten?",
+    o:["Jodendom","Boeddhisme","Islam","Hindoeïsme"], c:2,
+    u:"De kruisvaarders kwamen de islam tegen. De moslims (onder leiding van de Seldjoeken) hadden Jeruzalem veroverd. Later, bij de derde kruistocht, was Saladin de beroemde moslimleider."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Waarom was de moord op Thomas Becket zo schokkend?",
+    o:["Omdat hij de zoon van de koning was","Omdat hij de aartsbisschop was — een hoge kerkleider — en werd vermoord in zijn eigen kathedraal","Omdat hij de dichtstbijzijnde bondgenoot van de paus was","Omdat de moord op klaarlichte dag op straat plaatsvond"], c:1,
+    u:"Thomas Becket was de aartsbisschop van Canterbury — één van de hoogste kerkleiders in Engeland. Hij werd vermoord in zijn eigen kathedraal door ridders van de Engelse koning. Dit schokte heel Europa."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wat zei Jeanne d'Arc dat ze hoorde?",
+    o:["De stem van de Engelse koning","Goddelijke stemmen die haar vertelden hoe ze Frankrijk kon redden","De stem van de hertog van Bourgondië","Stemmen van gevallen ridders"], c:1,
+    u:"Jeanne d'Arc beweerde dat ze goddelijke stemmen hoorde — stemmen van heiligen die haar vertelden wat ze moest doen om Frankrijk te redden. Of ze ze echt hoorde weten we niet, maar het verhaal motiveerde de Fransen enorm."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wat was het parlement in de Middeleeuwen in Engeland?",
+    o:["De volksvertegenwoordiging zoals we die nu kennen","Een adviesraad van de koning met de belangrijkste edelen en geestelijken","Een rechtbank","Een vergadering van bisschoppen"], c:1,
+    u:"In de Middeleeuwen was het Engelse parlement een adviesraad van de koning met de belangrijkste edelen en geestelijken. Pas later werd het de volksvertegenwoordiging die het nu is."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Wat was de tweede kruistocht (1147-1149)?",
+    o:["Een succesvolle verovering van Jeruzalem","Een mislukte poging om Jeruzalem terug te veroveren","Een kruistocht naar Constantinopel","Een pelgrimstocht, geen militaire actie"], c:1,
+    u:"De tweede kruistocht (1147-1149) was een mislukking. De kruisvaarders slaagden er niet in om nieuwe gebieden te veroveren. Na de eerste succesvolle kruistocht waren de meeste latere kruistochten veel minder succesvol."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Wat veranderde er in Engeland door de Normandische verovering op het gebied van taal?",
+    o:["Iedereen ging Frans praten","De elite sprak Frans, gewone mensen bleven Engels spreken","Latijn werd de enige taal","Er veranderde niets aan de taal"], c:1,
+    u:"Na de verovering sprak de Normandische elite Frans, terwijl de gewone bevolking Engels bleef spreken. Dit verklaart waarom het moderne Engels zoveel Franse woorden heeft (zoals 'beef' van 'boeuf' en 'pork' van 'porc')."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wat was Vlaanderen in de context van de Honderdjarige Oorlog?",
+    o:["Een bondgenoot van Frankrijk","Een gebied waar Engeland handel mee dreef en dat hij wilde beschermen","Een gebied dat door Engeland was veroverd","De thuisbasis van de Engelse boogschutters"], c:1,
+    u:"Vlaanderen was een belangrijk handelsgebied voor de Engelsen. Edward III was bang dat de oorlog met Frankrijk de handelsroutes met Vlaanderen zou verbreken — dat was één van zijn redenen om te strijden."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wat is het leenstelsel (feodalisme)?",
+    o:["Een systeem waarbij kooplieden handelden","Een systeem waarbij land in leen werd gegeven in ruil voor diensten","Een systeem waarbij de kerk het land bezat","Een belastingsysteem van de koning"], c:1,
+    u:"Het leenstelsel (feodalisme) was het systeem waarbij een heer een stuk land in leen gaf aan een vazal, die daarvoor diensten moest leveren (zoals militaire hulp). Dit systeem was kenmerkend voor de Middeleeuwen."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Wat was naast Jeruzalem nog een heilige stad voor christenen, moslims én joden?",
+    o:["Rome","Constantinopel","Jeruzalem (voor alle drie)","Mekka"], c:2,
+    u:"Jeruzalem was heilig voor alle drie de godsdiensten. Voor christenen (Jezus stierf er), voor moslims (Mohammed steeg er op naar de hemel) en voor joden (de Tempelberg staat er). Dat maakte de kruistochten zo'n beladen conflict."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Wat was het grote verschil tussen de machtsopbouw in Frankrijk en Engeland na de Honderdjarige Oorlog?",
+    o:["In beide landen werd de koning sterker","In Frankrijk werd de koning sterker; in Engeland werden de adel en het parlement sterker","In Engeland werd de koning sterker; in Frankrijk werden de hertogen sterker","Er was geen verschil"], c:1,
+    u:"Na de Honderdjarige Oorlog gingen beide landen een andere kant op. In Frankrijk centraliseerde de macht bij de koning. In Engeland moest de koning juist steeds meer macht delen met de adel en het parlement."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Op welke datum werd Willem de Veroveraar gekroond tot koning van Engeland?",
+    o:["1 januari 1066","25 december 1066","14 oktober 1066","25 december 1065"], c:1,
+    u:"Willem de Veroveraar werd op 25 december 1066 gekroond tot koning van Engeland. De slag bij Hastings (14 oktober 1066) was al eerder dat jaar, maar de kroning vond op Kerstdag plaats."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Waarom was de Heilig Grafkerk zo belangrijk?",
+    o:["Omdat de paus er woonde","Omdat Jezus er volgens christenen was begraven en opgestaan","Omdat het de grootste kerk ter wereld was","Omdat er goud werd bewaard"], c:1,
+    u:"De Heilig Grafkerk in Jeruzalem stond op de plek waar Jezus volgens christenen was begraven en opgestaan. Dat maakte het de heiligste kerk ter wereld voor christenen."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wat was het gevolg van de Honderdjarige Oorlog voor de economie?",
+    o:["Beide economieën bloeiden","De Franse economie werd meer uitgeput dan de Engelse","De Engelse economie was volledig verwoest","Er was geen economisch effect"], c:1,
+    u:"De Honderdjarige Oorlog werd grotendeels op Frans grondgebied uitgevochten. Daardoor werd de Franse economie zwaarder getroffen dan de Engelse."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Waarom was het voor Karel VII belangrijk dat hij bisschoppen mocht benoemen?",
+    o:["Omdat bisschoppen heel rijk waren","Omdat hij zo controle had over de kerk in zijn land — kerkleiders moesten aan hem trouw zijn","Omdat bisschoppen zijn leger aanvoerden","Omdat bisschoppen belasting mochten innen"], c:1,
+    u:"Als de koning bisschoppen mocht benoemen, kon hij mensen kiezen die hem loyaal waren. Zo had hij controle over de kerk in zijn koninkrijk, in plaats van dat de paus die invloed had."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Welk gevolg hadden de kruistochten op de kennis in Europa?",
+    o:["Europa werd geïsoleerder","Europeanen kwamen in contact met nieuwe kennis, producten en ideeën uit het Midden-Oosten","De wetenschap verdween uit Europa","Er was geen invloed op kennis"], c:1,
+    u:"De kruistochten brachten Europeanen in aanraking met de geavanceerde Arabische wetenschap, wiskunde, geneeskunde en handelsproducten. Dit droeg bij aan de bloei van kennis in Europa in de latere Middeleeuwen."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Wat leerde de Magna Charta ons over de verhouding tussen de koning en de wet?",
+    o:["De koning staat boven de wet","Ook de koning moet zich aan de wet houden","Alleen de kerk bepaalt de wetten","De adel bepaalt de wetten, niet de koning"], c:1,
+    u:"De Magna Charta (1215) was een doorbraak: ook de koning moest zich aan afgesproken regels houden. Dit principe — dat niemand boven de wet staat — is nog steeds een grondslag van onze democratie."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wat maakte de boogschutters uit Wales zo effectief?",
+    o:["Ze hadden betere pantsers","Ze konden heel snel hun pijlen afschieten","Ze vochten te paard","Ze hadden giftige pijlen"], c:1,
+    u:"De boogschutters uit Wales konden razendsnel pijlen afschieten — veel sneller dan een ridder met zwaard kon reageren. Tegen een regen van pijlen was een ridderleger kansloos."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Waarom won Lodewijk XI de naam 'de Spin'?",
+    o:["Omdat hij acht benen had","Omdat hij slim een web van politieke macht spon door bondgenootschappen en list","Omdat hij bang was voor spinnen","Omdat hij een zwart gewaad droeg"], c:1,
+    u:"Lodewijk XI werd 'de Spin' genoemd omdat hij, net als een spin die een web spint, slim een netwerk van macht opbouwde. Hij gebruikte list, bondgenootschappen en het bespelen van zijn vijanden in plaats van alleen geweld."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Wie was de paus die in 1095 de eerste kruistocht uitriep?",
+    o:["Paus Gregorius VII","Paus Urbanus II","Paus Innocentius III","Paus Clemens V"], c:1,
+    u:"Paus Urbanus II riep in 1095 op tot de eerste kruistocht. Hij deed dit op het Concilie van Clermont, waar hij een groot publiek toesprak en opriep om Jeruzalem te bevrijden."
+  },
+  {
+    h:"5.1", cat:"Normandiërs",
+    v:"Waarom konden de Normandiërs in Engeland de 'elite' worden?",
+    o:["Omdat ze de Engelse taal leerden","Omdat Willem het land van de Engelse adel afpakte en aan zijn Normandiërs gaf","Omdat ze meer geld hadden","Omdat de Engelse bevolking hen uitnodigde"], c:1,
+    u:"Willem nam het land af van de Engelse adel en gaf het aan zijn Normandische helpers. Zo werden de Normandiërs de nieuwe machthebbers — een kleine Frans sprekende elite die de baas werd over de Engelse bevolking."
+  },
+  {
+    h:"5.2", cat:"Honderdjarige Oorlog",
+    v:"Wat was Orléans en waarom was het belangrijk?",
+    o:["De hoofdstad van Engeland","Een Franse stad die Jeanne d'Arc in 1429 innam, wat een keerpunt was in de oorlog","De geboorteplaats van Edward III","Een zeehaven in Normandië"], c:1,
+    u:"Orléans was een belangrijke Franse stad die door de Engelsen werd belegerd. In 1429 slaagde Jeanne d'Arc erin de stad te bevrijden. Dit was een keerpunt: de Fransen kregen weer moed en heroverden steeds meer gebied."
+  },
+  {
+    h:"5.3", cat:"Centralisatie",
+    v:"Waarom wilde Karel VII de macht van de hertog van Bourgondië verminderen?",
+    o:["Omdat de hertog meer land had dan de koning","Omdat de hertog te machtig was en de eenheid van Frankrijk in de weg stond","Omdat de hertog belasting weigerde te betalen","Omdat de hertog samenwerkte met de paus"], c:1,
+    u:"De hertog van Bourgondië was zo machtig dat hij een bedreiging vormde voor de centrale macht van de koning. Karel VII wilde van heel Frankrijk één eenheid maken, maar daarvoor moest hij de macht van zulke hertogen breken."
+  },
+  {
+    h:"5.4", cat:"Kruistochten",
+    v:"Voor welke drie godsdiensten was Jeruzalem een heilige stad?",
+    o:["Christendom, boeddhisme, islam","Christendom, jodendom, islam","Christendom, jodendom, hindoeïsme","Islam, boeddhisme, jodendom"], c:1,
+    u:"Jeruzalem is heilig voor drie godsdiensten: het christendom (Jezus leefde en stierf er), het jodendom (de Tempelberg staat er) en de islam (Mohammed steeg er op naar de hemel). Dat maakt het een bijzonder beladen plek in de wereldgeschiedenis."
+  }
+];
+</script>
+
+<script>
+// ── Audio ──
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playTone(freq, type, duration, vol = 0.4, delay = 0) {
+  try {
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+    gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + delay + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + duration + 0.05);
+  } catch(e) {}
+}
+const SFX = {
+  correct() { playTone(523,'sine',0.12,0.3); playTone(659,'sine',0.12,0.3,0.1); playTone(784,'sine',0.2,0.3,0.2); },
+  wrong() { playTone(300,'sawtooth',0.08,0.3); playTone(220,'sawtooth',0.25,0.3,0.1); },
+  streak() { [523,659,784,1047].forEach((f,i) => playTone(f,'sine',0.15,0.35,i*0.08)); },
+  countdown() { playTone(440,'sine',0.15,0.3); },
+  go() { [392,523,659,784].forEach((f,i) => playTone(f,'triangle',0.12,0.4,i*0.06)); },
+  gameover() { playTone(440,'sine',0.3,0.35); playTone(415,'sine',0.3,0.35,0.25); playTone(392,'sine',0.5,0.35,0.5); },
+  highscore() { [523,659,784,1047,1319].forEach((f,i) => { playTone(f,'sine',0.15,0.4,i*0.1); playTone(f*1.5,'triangle',0.1,0.2,i*0.1+0.05); }); },
+  urgentTick() { playTone(1100,'square',0.06,0.25); },
+  click() { playTone(600,'sine',0.06,0.2); }
+};
+
+// ── State ──
+let state = { vragen:[], huidig:0, score:0, streak:0, maxStreak:0, goedCount:0, foutCount:0, fouteVragen:[], timerInterval:null, timerLeft:15, answered:false, multiplier:1, diffCount:10 };
+
+function shuffle(arr) {
+  let a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+function $(id){return document.getElementById(id);}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active','exit'));
+  document.getElementById(id).classList.add('active');
+  if(id==='screen-scores') renderScores();
+  SFX.click();
+}
+function transitionTo(id) {
+  const cur = document.querySelector('.screen.active');
+  if(cur) cur.classList.add('exit');
+  setTimeout(() => {
+    cur && cur.classList.remove('active','exit');
+    document.getElementById(id).classList.add('active');
+  }, 280);
+}
+
+// ── Scores ──
+function getScores(){ try{return JSON.parse(localStorage.getItem('feniks5_scores')||'[]');}catch{return[];} }
+function saveScore(pts,correct,total){ const s=getScores(); s.push({pts,correct,total,date:new Date().toLocaleDateString('nl-NL')}); s.sort((a,b)=>b.pts-a.pts); localStorage.setItem('feniks5_scores',JSON.stringify(s.slice(0,10))); }
+function getHighscore(){ const s=getScores(); return s.length?s[0].pts:0; }
+function updateHomeHighscore(){ const hs=getHighscore(); $('hs-text').textContent=hs?`Highscore: ${hs} punten`:'Nog geen highscore'; }
+function renderScores(){
+  const scores=getScores(); const list=$('scores-list');
+  if(!scores.length){list.innerHTML='<div class="no-scores">Nog geen scores!</div>';return;}
+  const medals=['🥇','🥈','🥉'];
+  list.innerHTML=scores.map((s,i)=>`<div class="score-entry"><div class="score-rank">${medals[i]||(i+1)}</div><div class="score-info"><div class="score-pts">${s.pts} pts</div><div class="score-meta">${s.correct}/${s.total} goed · ${s.date}</div></div></div>`).join('');
+}
+function clearScores(){ if(confirm('Weet je zeker dat je alle scores wilt wissen?')){localStorage.removeItem('feniks5_scores');renderScores();updateHomeHighscore();} }
+
+// ── Difficulty ──
+document.querySelectorAll('.diff-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); state.diffCount=parseInt(btn.dataset.diff); SFX.click();
+  });
+});
+$('btn-start').addEventListener('click',()=>{ SFX.click(); startCountdown(); });
+
+function startCountdown(){
+  transitionTo('screen-countdown');
+  let n=3; $('countdown-num').textContent=n; SFX.countdown();
+  const iv=setInterval(()=>{
+    n--;
+    if(n<=0){clearInterval(iv);$('countdown-num').textContent='GO!';SFX.go();setTimeout(()=>startGame(),700);}
+    else{$('countdown-num').textContent=n;const el=$('countdown-num');el.style.animation='none';el.offsetHeight;el.style.animation='countPop 0.4s ease-out';SFX.countdown();}
+  },900);
+}
+
+function startGame(){
+  state.vragen=shuffle(ALLE_VRAGEN).slice(0,Math.min(state.diffCount,ALLE_VRAGEN.length));
+  state.huidig=0;state.score=0;state.streak=0;state.maxStreak=0;state.goedCount=0;state.foutCount=0;state.fouteVragen=[];state.multiplier=1;
+  transitionTo('screen-game');
+  renderVraag();
+}
+
+function renderVraag(){
+  const v=state.vragen[state.huidig]; const n=state.huidig+1; const tot=state.vragen.length;
+  state.answered=false;
+  $('q-counter').textContent=`${n} / ${tot}`;
+  $('progress-bar').style.width=`${((n-1)/tot)*100}%`;
+  $('live-score').textContent=state.score;
+  updateStreakBadge(); updateBonusBar();
+  $('q-hoofdstuk').textContent=`§ ${v.h}`;
+  $('q-category').textContent=v.cat;
+  $('q-text').textContent=v.v;
+  const shuffled=shuffle(v.o.map((o,i)=>({text:o,orig:i})));
+  const grid=$('answers-grid'); grid.innerHTML='';
+  shuffled.forEach(opt=>{
+    const btn=document.createElement('button');
+    btn.className='answer-btn'; btn.textContent=opt.text; btn.dataset.origIdx=opt.orig;
+    btn.onclick=()=>handleAnswer(btn,opt.orig===v.c,shuffled,v.c);
+    grid.appendChild(btn);
+  });
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(state.timerInterval); state.timerLeft=15; updateTimer();
+  state.timerInterval=setInterval(()=>{
+    state.timerLeft--;updateTimer();
+    if(state.timerLeft<=5&&state.timerLeft>0&&!state.answered) SFX.urgentTick();
+    if(state.timerLeft<=0){clearInterval(state.timerInterval);if(!state.answered)timeUp();}
+  },1000);
+}
+function updateTimer(){
+  const pct=state.timerLeft/15; const c=2*Math.PI*52;
+  $('timer-fill').style.strokeDashoffset=c*(1-pct); $('timer-text').textContent=state.timerLeft;
+  state.timerLeft<=5?$('timer-fill').classList.add('warn'):$('timer-fill').classList.remove('warn');
+}
+function timeUp(){
+  state.answered=true; document.querySelectorAll('.answer-btn').forEach(b=>b.disabled=true);
+  const v=state.vragen[state.huidig];
+  document.querySelectorAll('.answer-btn').forEach(b=>{if(parseInt(b.dataset.origIdx)===v.c)b.classList.add('correct-toon');});
+  state.streak=0;state.foutCount++;state.fouteVragen.push({...v,gekozen:'Geen antwoord (tijd op)'});
+  SFX.wrong();updateStreakBadge();
+  setTimeout(()=>showFeedback(false,v,0),600);
+}
+
+function handleAnswer(btn,isCorrect,shuffled,correctOrig){
+  if(state.answered)return; state.answered=true; clearInterval(state.timerInterval);
+  const v=state.vragen[state.huidig];
+  document.querySelectorAll('.answer-btn').forEach(b=>b.disabled=true);
+  const timeBonus=state.timerLeft>=12?3:state.timerLeft>=8?2:1;
+  if(isCorrect){
+    btn.classList.add('correct');
+    state.streak++;state.maxStreak=Math.max(state.maxStreak,state.streak);state.goedCount++;
+    state.multiplier=state.streak>=5?3:state.streak>=3?2:1;
+    const pts=100*state.multiplier*timeBonus; state.score+=pts;
+    $('live-score').textContent=state.score;
+    state.streak>=3?SFX.streak():SFX.correct();
+    showScorePopup(btn,`+${pts}`); updateStreakBadge(); updateBonusBar();
+    setTimeout(()=>showFeedback(true,v,pts),800);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.answer-btn').forEach(b=>{if(parseInt(b.dataset.origIdx)===correctOrig)b.classList.add('correct-toon');});
+    state.streak=0;state.foutCount++;state.fouteVragen.push({...v,gekozen:btn.textContent});
+    state.multiplier=1; SFX.wrong(); updateStreakBadge(); updateBonusBar();
+    showScorePopup(btn,'0',true);
+    setTimeout(()=>showFeedback(false,v,0),900);
+  }
+}
+
+function showScorePopup(btn,text,isBad=false){
+  const rect=btn.getBoundingClientRect(); const pop=document.createElement('div');
+  pop.className='score-popup';pop.textContent=text;
+  pop.style.left=`${rect.left+rect.width/2-20}px`;pop.style.top=`${rect.top-10}px`;
+  if(isBad)pop.style.color='#f87171';
+  document.body.appendChild(pop);setTimeout(()=>pop.remove(),1100);
+}
+function updateStreakBadge(){
+  $('streak-count').textContent=state.streak;
+  const badge=$('streak-badge');
+  if(state.streak>=3){badge.style.background='rgba(74,222,128,0.25)';badge.style.borderColor='rgba(74,222,128,0.6)';badge.classList.add('bump');setTimeout(()=>badge.classList.remove('bump'),300);}
+  else{badge.style.background='';badge.style.borderColor='';}
+}
+function updateBonusBar(){
+  const bar=$('bonus-bar');const txt=$('bonus-text');
+  if(state.streak>=5){txt.textContent=`⚡ 3× punten — MEGA STREAK! (${state.streak})`;bar.classList.add('active');}
+  else if(state.streak>=3){txt.textContent=`⚡ 2× punten — Streak! (${state.streak})`;bar.classList.add('active');}
+  else{txt.textContent='⚡ 1× punten';bar.classList.remove('active');}
+}
+
+function showFeedback(correct,v,pts){
+  $('fb-emoji').textContent=correct?(state.streak>=5?'🔥':state.streak>=3?'🌟':'✅'):'❌';
+  const title=$('fb-title');
+  title.textContent=correct?(state.streak>=5?'MEGA STREAK!':state.streak>=3?'Super goed!':'Goed!'):'Helaas...';
+  title.className='feedback-title '+(correct?'good':'bad');
+  $('fb-pts').textContent=pts>0?`+${pts} punten`:'Geen punten';
+  $('fb-explanation').textContent=v.u;
+  $('fb-answer').textContent=`Juist antwoord: ${v.o[v.c]}`;
+  const isLast=state.huidig>=state.vragen.length-1;
+  $('btn-next').textContent=isLast?'Resultaat bekijken 🏆':'Volgende vraag →';
+  $('btn-next').onclick=isLast?showResult:nextQuestion;
+  transitionTo('screen-feedback');
+}
+function nextQuestion(){ SFX.click();state.huidig++;transitionTo('screen-game');setTimeout(renderVraag,300); }
+
+function showResult(){
+  clearInterval(state.timerInterval);
+  const tot=state.vragen.length; const pct=Math.round((state.goedCount/tot)*100);
+  const isHighscore=state.score>getHighscore();
+  saveScore(state.score,state.goedCount,tot);
+  $('result-score-big').textContent=state.score;
+  $('stat-correct').textContent=state.goedCount;
+  $('stat-wrong').textContent=state.foutCount;
+  $('stat-streak').textContent=state.maxStreak;
+  $('stat-pct').textContent=`${pct}%`;
+  let trophy,title;
+  if(pct===100){trophy='🏆';title='Perfect!';}
+  else if(pct>=80){trophy='🥇';title='Uitstekend!';}
+  else if(pct>=60){trophy='🥈';title='Goed gedaan!';}
+  else if(pct>=40){trophy='🥉';title='Aardig!';}
+  else{trophy='📚';title='Blijven oefenen!';}
+  $('result-trophy').textContent=trophy; $('result-title').textContent=title;
+  $('new-record').style.display=isHighscore&&state.score>0?'block':'none';
+  const wl=$('wrong-list');
+  if(state.fouteVragen.length>0){
+    wl.innerHTML=`<div class="wrong-list-title">Verbeterpunten (${state.fouteVragen.length})</div>`+
+      state.fouteVragen.map(f=>`<div class="wrong-item"><div class="wrong-item-q">${f.v}</div><div class="wrong-item-a">Jouw antwoord: <span style="color:#f87171">${f.gekozen||'—'}</span></div><div class="wrong-item-a">Juist: <span class="correct-ans">${f.o[f.c]}</span></div><div class="wrong-item-expl">${f.u}</div></div>`).join('');
+  } else {
+    wl.innerHTML='<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.4);font-size:14px">🎯 Geen fouten! Geweldig!</div>';
+  }
+  transitionTo('screen-result');
+  if(isHighscore&&state.score>0){SFX.highscore();setTimeout(()=>launchConfetti(),400);}
+  else if(pct>=80){SFX.streak();setTimeout(()=>launchConfetti(30),400);}
+  else{SFX.gameover();}
+  updateHomeHighscore();
+}
+
+function goHome(){ SFX.click();clearInterval(state.timerInterval);updateHomeHighscore();transitionTo('screen-home'); }
+function restartGame(){ SFX.click();clearInterval(state.timerInterval);startCountdown(); }
+
+function launchConfetti(count=80){
+  const canvas=$('confetti-canvas'); const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  const colors=['#4ade80','#22d3ee','#fbbf24','#f472b6','#818cf8','#fb923c'];
+  const pieces=[];
+  for(let i=0;i<count;i++) pieces.push({x:Math.random()*canvas.width,y:-20-Math.random()*200,vx:(Math.random()-0.5)*6,vy:2+Math.random()*5,w:8+Math.random()*12,h:5+Math.random()*8,color:colors[Math.floor(Math.random()*colors.length)],rot:Math.random()*Math.PI*2,vrot:(Math.random()-0.5)*0.2});
+  let frame=0;
+  function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.rot+=p.vrot;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.color;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();});
+    frame++;if(frame<180)requestAnimationFrame(animate);else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  animate();
+}
+
+window.addEventListener('load',()=>{ updateHomeHighscore(); state.diffCount=10; });
+</script>
+</body>
+</html>
