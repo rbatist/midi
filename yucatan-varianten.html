@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yucatán — 22 dec t/m 7 jan · vier varianten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+  :root{
+    --cenote:#152B26;
+    --cenote-2:#1E3B34;
+    --sascab:#CFC6B5;
+    --sascab-dim:#C1B59E;
+    --text-meta:#948A6F;
+    --maya:#3B9FB4;
+    --maya-dim:#2C7A8C;
+    --salt:#E8927E;
+    --salt-dim:#C97362;
+    --henequen:#8DA06A;
+    --ink:#241F1B;
+    --line: rgba(242,233,216,0.18);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--cenote);color:var(--sascab);font-family:'Inter',sans-serif;line-height:1.55;}
+  ::selection{background:var(--maya);color:var(--cenote);}
+
+  .hero{position:relative;padding:5rem 1.5rem 2.5rem;max-width:920px;margin:0 auto;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--salt);margin:0 0 1.1rem;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(2.2rem,6vw,3.8rem);line-height:1.02;margin:0 0 1.1rem;letter-spacing:-0.01em;}
+  h1 em{font-style:italic;font-weight:500;color:var(--maya);}
+  .hero p.lede{font-size:1.05rem;max-width:56ch;color:var(--sascab-dim);margin:0 0 2rem;}
+
+  .toggle{display:inline-flex;flex-wrap:wrap;background:rgba(242,233,216,0.07);border:1px solid rgba(242,233,216,0.16);border-radius:22px;padding:4px;gap:2px;}
+  .toggle button{font-family:'JetBrains Mono',monospace;font-size:0.76rem;letter-spacing:0.02em;padding:0.55rem 0.9rem;border-radius:999px;border:none;background:transparent;color:var(--text-meta);cursor:pointer;transition:background 0.25s ease, color 0.25s ease;}
+  .toggle button:hover{color:var(--sascab);}
+  .toggle button.active{background:var(--maya);color:var(--cenote);font-weight:600;}
+  .toggle button:focus-visible{outline:2px solid var(--salt);outline-offset:2px;}
+
+  .variant-intro{max-width:56ch;margin:1.4rem 0 0;color:var(--sascab-dim);font-size:0.98rem;}
+  .variant-intro strong{color:var(--sascab);font-weight:600;}
+
+  .stat-strip{display:flex;gap:1.6rem;flex-wrap:wrap;margin-top:1.8rem;padding-top:1.6rem;border-top:1px solid rgba(242,233,216,0.14);}
+  .stat{font-family:'JetBrains Mono',monospace;}
+  .stat .num{font-size:1.4rem;display:block;color:var(--sascab);}
+  .stat .label{font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-meta);}
+
+  .diff-wrap{max-width:920px;margin:0 auto;padding:0 1.5rem 2rem;}
+  .diff-card{border:1px solid rgba(242,233,216,0.16);border-radius:16px;overflow:hidden;}
+  .diff-card h3{font-family:'Fraunces',serif;font-style:italic;font-weight:600;font-size:1.05rem;margin:0;padding:0.9rem 1.1rem 0.7rem;color:var(--sascab);}
+  .diff-scroll{overflow-x:auto;}
+  table.diff{width:100%;min-width:640px;border-collapse:collapse;font-size:0.82rem;}
+  table.diff th, table.diff td{padding:0.5rem 0.9rem;text-align:left;border-top:1px solid rgba(242,233,216,0.1);vertical-align:top;}
+  table.diff th{font-family:'JetBrains Mono',monospace;font-size:0.64rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-meta);font-weight:500;}
+  table.diff td:first-child{color:var(--text-meta);white-space:nowrap;}
+  table.diff td{color:var(--sascab-dim);}
+
+  .legend{max-width:920px;margin:0 auto;padding:0 1.5rem 1.2rem;display:flex;gap:1.4rem;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-meta);}
+  .legend span{display:inline-flex;align-items:center;gap:0.45rem;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .dot.erfgoed{background:var(--maya);}
+  .dot.natuur{background:var(--henequen);}
+  .dot.stad{background:var(--salt);}
+  .dot.transit{background:rgba(242,233,216,0.35);}
+  .dash{width:18px;height:0;border-top:2px dashed rgba(242,233,216,0.35);display:inline-block;}
+
+  .map-wrap{max-width:920px;margin:0 auto;padding:0 1.5rem 1rem;}
+  .map-card{border-radius:20px;overflow:hidden;border:1px solid rgba(242,233,216,0.16);height:460px;}
+  #map{width:100%;height:100%;background:var(--cenote-2);}
+  .map-caption{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text-meta);padding:0.7rem 0.2rem 0;}
+  .pin{width:26px;height:26px;border-radius:50%;background:var(--cenote-2);border:2px solid var(--maya);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:#F2E9D8;box-shadow:0 2px 6px rgba(0,0,0,0.45);}
+  .pin.natuur{border-color:var(--henequen);}
+  .pin.stad{border-color:var(--salt);}
+  .pin.transit{border-color:rgba(242,233,216,0.5);}
+  .leaflet-popup-content-wrapper{background:#F2E9D8;color:var(--ink);border-radius:10px;}
+  .leaflet-popup-tip{background:#F2E9D8;}
+  .leaflet-popup-content{font-family:'Inter',sans-serif;font-size:0.85rem;margin:0.6rem 0.8rem;}
+  .leaflet-popup-content strong{font-family:'Fraunces',serif;font-size:1rem;}
+
+  main{max-width:920px;margin:0 auto;padding:1rem 1.5rem 4rem;}
+  .timeline{list-style:none;margin:0;padding:0;position:relative;}
+  .timeline::before{content:"";position:absolute;left:5px;top:10px;bottom:10px;width:1px;background:var(--line);}
+  .stop{position:relative;padding:0 0 3rem 2.6rem;}
+  .stop:last-child{padding-bottom:0.5rem;}
+  .node{position:absolute;left:0;top:6px;border-radius:50%;background:var(--cenote-2);border:2px solid var(--maya);}
+  .stop.natuur .node{border-color:var(--henequen);}
+  .stop.stad .node{border-color:var(--salt);}
+  .stop.transit .node{border-color:rgba(242,233,216,0.35);}
+
+  .postcard{position:relative;border-radius:16px;height:150px;margin-bottom:1.1rem;overflow:hidden;display:flex;align-items:flex-end;padding:1rem;}
+  .pc-scene{position:absolute;inset:0;width:100%;height:100%;}
+  .postcard .pc-icon{position:absolute;right:-14px;top:-14px;width:120px;height:120px;color:rgba(242,233,216,0.4);}
+  .postcard .pc-label{position:relative;font-family:'JetBrains Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:#F2E9D8;background:rgba(21,43,38,0.4);padding:0.3rem 0.65rem;border-radius:999px;backdrop-filter:blur(2px);}
+
+  .drivebar-row{display:flex;align-items:center;gap:0.6rem;margin:0 0 0.9rem;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-meta);}
+  .drivebar{height:3px;background:rgba(242,233,216,0.14);border-radius:2px;width:90px;overflow:hidden;}
+  .drivebar i{display:block;height:100%;background:var(--salt);border-radius:2px;}
+
+  .stop .daytag{font-family:'JetBrains Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--maya);display:block;margin-bottom:0.4rem;}
+  .stop.natuur .daytag{color:var(--henequen);}
+  .stop.stad .daytag{color:var(--salt);}
+  .stop.transit .daytag{color:var(--text-meta);}
+
+  .stop h2{font-family:'Fraunces',serif;font-weight:600;font-size:1.5rem;margin:0 0 0.5rem;color:var(--sascab);}
+  .nights{display:inline-flex;gap:3px;vertical-align:middle;margin-left:0.6rem;}
+  .nights i{width:6px;height:6px;border-radius:50%;background:var(--sascab-dim);display:inline-block;}
+  .stop p{margin:0;max-width:58ch;color:var(--sascab-dim);font-size:0.96rem;}
+  .feest{display:inline-block;margin-top:0.7rem;font-family:'JetBrains Mono',monospace;font-size:0.66rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--salt);border:1px dashed var(--salt-dim);padding:0.25rem 0.6rem;border-radius:999px;}
+
+  footer{max-width:920px;margin:0 auto;padding:2.5rem 1.5rem 4.5rem;border-top:1px solid rgba(242,233,216,0.14);}
+  footer h3{font-family:'Fraunces',serif;font-weight:600;font-style:italic;font-size:1.3rem;margin:0 0 1rem;color:var(--sascab);}
+  footer ul{margin:0;padding:0 0 0 1.1rem;color:var(--sascab-dim);font-size:0.94rem;}
+  footer li{margin-bottom:0.5rem;}
+  .credit{margin-top:2.5rem;font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--text-meta);letter-spacing:0.04em;}
+
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto;}}
+  @media (max-width:600px){
+    .hero{padding:3.5rem 1.25rem 2rem;}
+    main{padding:0.5rem 1.25rem 3rem;}
+    .stop{padding-left:2.2rem;}
+    .map-card{height:340px;}
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+  <symbol id="icon-transit" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M50 8 L58 42 L92 50 L58 58 L50 92 L42 58 L8 50 L42 42 Z"/>
+  </symbol>
+  <symbol id="icon-flamingo" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="60" cy="22" r="5"/>
+    <path d="M60 27 C48 36 56 46 44 54 C58 60 66 56 70 62"/>
+    <path d="M40 60 C40 70 50 76 60 74 C68 72 72 66 68 60"/>
+    <path d="M50 76 L46 92"/>
+    <path d="M60 74 L64 90"/>
+  </symbol>
+  <symbol id="icon-pyramid" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M50 15 L82 85 L18 85 Z"/>
+    <path d="M30 65 L70 65"/>
+    <path d="M35 50 L65 50"/>
+    <path d="M40 35 L60 35"/>
+  </symbol>
+  <symbol id="icon-arch" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="78" cy="20" r="6"/>
+    <path d="M20 90 L20 45 C20 25 35 15 50 15 C65 15 80 25 80 45 L80 90"/>
+    <path d="M20 90 L80 90"/>
+    <path d="M35 90 L35 60"/>
+    <path d="M65 90 L65 60"/>
+  </symbol>
+  <symbol id="icon-water" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="50" cy="55" r="12"/>
+    <circle cx="50" cy="55" r="26"/>
+    <circle cx="50" cy="55" r="40"/>
+    <path d="M15 88 Q50 80 85 88"/>
+  </symbol>
+  <symbol id="icon-reef" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 35 Q22 20 39 35 T73 35 T100 35"/>
+    <path d="M5 55 Q22 40 39 55 T73 55 T100 55"/>
+    <circle cx="25" cy="72" r="2.5" fill="currentColor"/>
+    <circle cx="55" cy="77" r="2.5" fill="currentColor"/>
+    <circle cx="75" cy="70" r="2.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="icon-waterfall" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 15 L80 15"/>
+    <path d="M35 15 C35 40 30 55 25 75"/>
+    <path d="M50 15 C50 42 48 58 46 78"/>
+    <path d="M65 15 C65 40 70 55 74 75"/>
+    <path d="M12 85 Q30 78 50 85 T88 85"/>
+  </symbol>
+  <symbol id="icon-boat" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15 60 L85 60 L72 78 L28 78 Z"/>
+    <path d="M50 60 L50 22"/>
+    <path d="M50 25 C62 28 70 38 70 50 L50 50 Z"/>
+    <path d="M10 88 Q30 82 50 88 T90 88"/>
+  </symbol>
+</svg>
+
+<section class="hero">
+  <p class="eyebrow">Roadtrip · huurauto · aankomst di 22 dec 15:00 · vertrek do 7 jan 17:00 · 16 nachten</p>
+  <h1>Yucatán — <em>vier varianten</em></h1>
+  <p class="lede">Zelfde vluchten, vier manieren om het schiereiland te rijden. Alle varianten houden zich aan de regels: max ±3 uur rijden per dag (één keer 3,5–4 uur toegestaan), minimaal 2 nachten per plek tenzij één nacht logisch is.</p>
+  <div class="toggle" role="tablist" aria-label="Kies variant">
+    <button data-v="V1" class="active" role="tab" aria-selected="true">1 · Klassiek</button>
+    <button data-v="V2" role="tab" aria-selected="false">2 · Expeditie</button>
+    <button data-v="V3" role="tab" aria-selected="false">3 · Tegen de klok</button>
+    <button data-v="V4" role="tab" aria-selected="false">4 · Rustig noorden</button>
+  </div>
+  <p class="variant-intro" id="variantIntro"></p>
+  <div class="stat-strip" id="statStrip"></div>
+</section>
+
+<div class="diff-wrap">
+  <div class="diff-card">
+    <h3>De vier varianten naast elkaar</h3>
+    <div class="diff-scroll">
+    <table class="diff">
+      <tr><th></th><th>1 · Klassiek</th><th>2 · Expeditie</th><th>3 · Tegen de klok</th><th>4 · Rustig noorden</th></tr>
+      <tr><td>Richting</td><td>met de klok mee</td><td>met de klok mee</td><td>tegen de klok in</td><td>noordwestlus</td></tr>
+      <tr><td>Kerst</td><td>jungle (Calakmul)</td><td>jungle (Calakmul)</td><td>strand (El Cuyo)</td><td>strand (El Cuyo)</td></tr>
+      <tr><td>Oud &amp; nieuw</td><td>Mérida, Plaza Grande</td><td>Campeche, malecón</td><td>Campeche, malecón</td><td>Mérida, Plaza Grande</td></tr>
+      <tr><td>Calakmul</td><td>3 nachten</td><td>3 nachten</td><td>3 nachten (nieuwjaarsweek, stil)</td><td>—</td></tr>
+      <tr><td>Palenque</td><td>—</td><td>2 nachten + watervallen</td><td>—</td><td>—</td></tr>
+      <tr><td>Bijzonder</td><td>4 nachten Mérida</td><td>El Tigre &amp; dolfijnen</td><td>eindigt met rif-snorkelen</td><td>Celestún 2 nachten, minste rijden</td></tr>
+      <tr><td>Totaal rijden</td><td>±19u30</td><td>±26u</td><td>±19u45</td><td>±17u15</td></tr>
+      <tr><td>Eennachtsstops</td><td>4</td><td>7</td><td>4</td><td>3</td></tr>
+    </table>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <span><i class="dot erfgoed"></i>erfgoed / ruïnes</span>
+  <span><i class="dot natuur"></i>natuur / water</span>
+  <span><i class="dot stad"></i>stad / dorp</span>
+  <span><i class="dot transit"></i>aankomst / vertrek</span>
+  <span><i class="dash"></i>andere varianten</span>
+</div>
+
+<div class="map-wrap">
+  <div class="map-card"><div id="map"></div></div>
+  <p class="map-caption">Kaartdata © OpenStreetMap-bijdragers, tegels © CARTO · gestippeld = de niet-gekozen varianten</p>
+</div>
+
+<main>
+  <ol class="timeline" id="timeline"></ol>
+</main>
+
+<footer>
+  <h3>Praktisch onderweg</h3>
+  <ul>
+    <li>Rijtijden zijn kaal — reken bij ruïnes en natuurstops altijd een paar uur bezoektijd erbovenop.</li>
+    <li>Calakmul (variant 1–3): vroeg starten, poorten open om 8:00 — dan zijn brulapen en toekans het actiefst en is het koel.</li>
+    <li>Variant 2: de trajecten rond Palenque zijn lange, monotone wegen — volgetankt vertrekken en bij daglicht rijden. Candelaria en Isla Aguada hebben nette maar eenvoudige hotelletjes.</li>
+    <li>Di 22 dec en do 7 jan zijn KLM-dagen (TUI vliegt alleen zaterdag) — controleer de dienstregeling bij het boeken.</li>
+    <li>Vertrekdag: de vlucht gaat om ±17:00; vanuit El Cuyo (±2u45) of Puerto Morelos (±30 min) ben je ruim op tijd.</li>
+  </ul>
+  <p class="credit">Route samengesteld voor een Yucatán-reis met huurauto · 22 dec t/m 7 jan.</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ---- herbruikbare stops ----
+const S = {
+  pmStart:{day:"Dag 1 · di 22 dec", place:"Puerto Morelos", nights:1, cat:"transit", drive:0.5, driveLabel:"±30 min vanaf de luchthaven",
+    icon:"reef", grad:"linear-gradient(135deg, var(--cenote-2), var(--maya-dim))",
+    text:"Aankomst om 15:00, meteen door naar dit rustige vissersdorp — een fijne eerste avond aan zee.",
+    lat:20.8478084, lng:-86.8755342},
+  vertrekCuyo:{day:"Vertrek · do 7 jan", place:"Cancún Airport", nights:0, cat:"transit", drive:2.75, driveLabel:"±2u45 · vertrek vlucht ±17:00",
+    icon:"transit", grad:"linear-gradient(135deg, var(--cenote-2), var(--cenote))",
+    text:"Rond 10:30 vertrekken uit El Cuyo, auto inleveren en ruim op tijd voor de vlucht.",
+    lat:21.0365, lng:-86.8770},
+  vertrekPM:{day:"Vertrek · do 7 jan", place:"Cancún Airport", nights:0, cat:"transit", drive:0.5, driveLabel:"±30 min · vertrek vlucht ±17:00",
+    icon:"transit", grad:"linear-gradient(135deg, var(--cenote-2), var(--cenote))",
+    text:"Een ontspannen laatste ochtend in Puerto Morelos — het vliegveld is om de hoek.",
+    lat:21.0365, lng:-86.8770}
+};
+const P = {
+  bacalar:[18.6778712,-88.3901067], xpujil:[18.5054461,-89.3935247], campeche:[19.8431988,-90.5364174],
+  uxmal:[20.3610446,-89.7707859], merida:[20.9681469,-89.6298724], izamal:[20.9299997,-89.0227126],
+  elcuyo:[21.5136,-87.6835], candelaria:[18.186,-91.046], palenque:[17.4838,-92.0450],
+  islaaguada:[18.792,-91.489], celestun:[20.8593042,-90.3972052], valladolid:[20.6896,-88.2011],
+  pm:[20.8478084,-86.8755342]
+};
+function st(day,place,nights,cat,drive,driveLabel,icon,grad,text,pos,feest){
+  return {day,place,nights,cat,drive,driveLabel,icon,grad,text,lat:pos[0],lng:pos[1],feest};
+}
+const G = {
+  jungle:"linear-gradient(135deg, var(--henequen), var(--cenote))",
+  water:"linear-gradient(135deg, var(--maya), var(--henequen))",
+  stad:"linear-gradient(135deg, var(--salt), var(--maya))",
+  stad2:"linear-gradient(135deg, var(--salt-dim), var(--maya-dim))",
+  geel:"linear-gradient(135deg, var(--salt), var(--sascab-dim))",
+  ruine:"linear-gradient(135deg, var(--maya), var(--cenote-2))",
+  kust:"linear-gradient(135deg, var(--henequen), var(--salt))",
+  rif:"linear-gradient(135deg, var(--maya-dim), var(--sascab-dim))",
+  rivier:"linear-gradient(135deg, var(--henequen), var(--maya-dim))",
+  palenque:"linear-gradient(135deg, var(--maya), var(--henequen))"
+};
+
+const variants = {
+  V1: {
+    intro:"<strong>De klassieker.</strong> Met de klok mee: eerst diep de jungle in, dan de koloniale steden en ruïnes, afbouwen aan de noordkust. Kerst bij Calakmul, oud & nieuw op de Plaza Grande in Mérida, vier rustige Mérida-dagen als hart van de reis.",
+    stats:[{num:"8",label:"stops"},{num:"±19u30",label:"totaal rijden"},{num:"4",label:"eennachtsstops"},{num:"1×",label:"dag ≥3u30 (geen)"}],
+    stops:[
+      S.pmStart,
+      st("Dag 2 · wo 23 dec","Bacalar",1,"natuur",3,"±3u · lunchstop bij Tulum","water",G.water,"Bekend terrein, maar een logische tussenstop op weg naar het zuiden — een middag aan de lagune van zeven kleuren.",P.bacalar),
+      st("Dag 3–5 · 24–26 dec","Xpujil / Calakmul",3,"erfgoed",2,"±2u","pyramid",G.jungle,"Eén dag voor Calakmul zelf, één dag voor de Río Bec-sites Becán, Chicanná en Hormiguero — met bij zonsondergang de vleermuizengrot langs de weg.",P.xpujil,"Kerst in de jungle"),
+      st("Dag 6–7 · 27–28 dec","Campeche",2,"stad",3,"±3u","arch",G.stad,"Ommuurde koloniale havenstad (UNESCO) met kleurrijke gevels aan zee. Dagtrip-optie: de ruïne Edzná (±1u).",P.campeche),
+      st("Dag 8 · di 29 dec","Uxmal · Santa Elena",1,"erfgoed",2.25,"±2–2u30 · Ruta Puuc: Loltún, Labná, Sayil, Kabah","pyramid",G.ruine,"Onderweg de volledige Puuc-route, eindigend bij Uxmal — één van de best bewaarde Maya-sites. Overnacht in het dorpje Santa Elena vlakbij.",P.uxmal),
+      st("Dag 9–12 · 30 dec – 2 jan","Mérida",4,"stad",1.25,"±1u15","arch",G.stad2,"Vier nachten: historisch centrum, markten, musea, en dagtrips naar de cenotes bij Homún én naar Celestún — met vier nachten passen ze allebei.",P.merida,"Oud & nieuw op de Plaza Grande"),
+      st("Dag 13 · zo 3 jan","Izamal",1,"stad",1.25,"±1u15","arch",G.geel,"De gele stad — compact genoeg voor één nacht: centrum, klooster en de Kinich Kakmó-piramide midden in het dorp.",P.izamal),
+      st("Dag 14–16 · 4–6 jan","El Cuyo",3,"natuur",3.25,"±3u15 · via Ek Balam","flamingo",G.kust,"Onderweg Ek Balam (rustige ruïne, beklimbaar). Uitvalsbasis voor Las Coloradas én de flamingotocht bij Río Lagartos — drie dagen afbouwen aan zee.",P.elcuyo),
+      S.vertrekCuyo
+    ]
+  },
+  V2: {
+    intro:"<strong>De expeditie.</strong> Dezelfde lus als variant 1, maar doorgestoken naar Palenque — met twee originele rivierstops (El Tigre per boot, dolfijnen in de Laguna de Términos) zodat geen rijdag boven de ±3 uur uitkomt. Hoger tempo, meer eennachtsstops, het meest avontuurlijk.",
+    stats:[{num:"10",label:"stops"},{num:"±26u",label:"totaal rijden"},{num:"7",label:"eennachtsstops"},{num:"2",label:"basic overnachtingen"}],
+    stops:[
+      S.pmStart,
+      st("Dag 2 · wo 23 dec","Bacalar",1,"natuur",3,"±3u · lunchstop bij Tulum","water",G.water,"Bekend terrein, maar een logische tussenstop op weg naar het zuiden — een middag aan de lagune van zeven kleuren.",P.bacalar),
+      st("Dag 3–5 · 24–26 dec","Xpujil / Calakmul",3,"erfgoed",2,"±2u","pyramid",G.jungle,"Eén dag voor Calakmul zelf, één dag voor de Río Bec-sites Becán, Chicanná en Hormiguero — met bij zonsondergang de vleermuizengrot langs de weg.",P.xpujil,"Kerst in de jungle"),
+      st("Dag 6 · zo 27 dec","Candelaria",1,"natuur",3,"±3u","boat",G.rivier,"Dorpje aan de Río Candelaria. Per boot over de rivier naar de afgelegen ruïne El Tigre — brulapen, geen toeristen. Accommodatie is eenvoudig.",P.candelaria),
+      st("Dag 7–8 · 28–29 dec","Palenque",2,"erfgoed",2.25,"±2–2u30","waterfall",G.palenque,"Qua setting de mooiste Maya-site van Mexico: tempels tegen nevelige, beboste heuvels. De volle dag: 's ochtends de ruïnes, 's middags de watervallen Misol-Ha en Agua Azul.",P.palenque),
+      st("Dag 9 · wo 30 dec","Isla Aguada",1,"natuur",3,"±3u","boat",G.rif,"Vissersdorp aan de Laguna de Términos, Mexico's grootste kustlagune — bootexcursie naar de dolfijnen die er permanent leven. Eenvoudige, nette hotels.",P.islaaguada),
+      st("Dag 10–11 · 31 dec – 1 jan","Campeche",2,"stad",2.5,"±2u30","arch",G.stad,"Oud & nieuw in de ommuurde koloniale havenstad (UNESCO). Nieuwjaarsdag rustig: centrum, stadsmuren, zeeboulevard.",P.campeche,"Oud & nieuw op de malecón"),
+      st("Dag 12 · za 2 jan","Uxmal · Santa Elena",1,"erfgoed",2.25,"±2–2u30 · Ruta Puuc: Loltún, Labná, Sayil, Kabah","pyramid",G.ruine,"Onderweg de volledige Puuc-route, eindigend bij Uxmal. Overnacht in het dorpje Santa Elena vlakbij.",P.uxmal),
+      st("Dag 13–14 · 3–4 jan","Mérida",2,"stad",1.25,"±1u15","arch",G.stad2,"Twee nachten: historisch centrum, markten, en één dagtrip — kies tussen de cenotes bij Homún of Celestún.",P.merida),
+      st("Dag 15–16 · 5–6 jan","El Cuyo",2,"natuur",3.5,"±3u30 · lunchstop Izamal, langs Ek Balam","flamingo",G.kust,"Onderweg lunchen in het gele Izamal. Uitvalsbasis voor Las Coloradas én de flamingotocht bij Río Lagartos — twee dagen afbouwen aan zee.",P.elcuyo),
+      S.vertrekCuyo
+    ]
+  },
+  V3: {
+    intro:"<strong>Tegen de klok in.</strong> Eerst kerst aan het strand van El Cuyo, dan via Mérida en de Puuc-route naar Campeche voor oud & nieuw — en de jungle van Calakmul in de stille nieuwjaarsweek, als de kerstdrukte weg is. Eindigt met rif-snorkelen in Puerto Morelos, op een half uur van het vliegveld.",
+    stats:[{num:"9",label:"stops"},{num:"±19u45",label:"totaal rijden"},{num:"4",label:"eennachtsstops"},{num:"30 min",label:"naar vliegveld op vertrekdag"}],
+    stops:[
+      S.pmStart,
+      st("Dag 2–4 · 23–25 dec","El Cuyo",3,"natuur",2.75,"±2u45","flamingo",G.kust,"Kerst aan zee in dit onontdekte stranddorpje. Uitvalsbasis voor Las Coloradas én de flamingotocht bij Río Lagartos — beide binnen een uur rijden.",P.elcuyo,"Kerst aan het strand"),
+      st("Dag 5 · za 26 dec","Izamal",1,"stad",3.25,"±3u15 · via Ek Balam","arch",G.geel,"Onderweg Ek Balam (rustige ruïne, beklimbaar). Izamal — de gele stad — is compact genoeg voor één nacht.",P.izamal),
+      st("Dag 6–7 · 27–28 dec","Mérida",2,"stad",1.25,"±1u15","arch",G.stad2,"Historisch centrum, markten, musea, en één dagtrip — kies tussen de cenotes bij Homún of Celestún.",P.merida),
+      st("Dag 8 · di 29 dec","Uxmal · Santa Elena",1,"erfgoed",1.25,"±1u15","pyramid",G.ruine,"Uxmal in de middag, 's avonds soms een lichtshow. Overnacht in het dorpje Santa Elena vlakbij.",P.uxmal),
+      st("Dag 9–10 · 30–31 dec","Campeche",2,"stad",2.25,"±2–2u30 · Ruta Puuc: Kabah, Sayil, Labná, Loltún","arch",G.stad,"Onderweg de volledige Puuc-route. Oud & nieuw in de ommuurde koloniale havenstad, met feest op de malecón.",P.campeche,"Oud & nieuw op de malecón"),
+      st("Dag 11–13 · 1–3 jan","Xpujil / Calakmul",3,"erfgoed",3,"±3u","pyramid",G.jungle,"De jungle in de stilste week van het jaar. Eén dag Calakmul (vroeg starten), één dag de Río Bec-sites Becán, Chicanná en Hormiguero, met de vleermuizengrot bij zonsondergang.",P.xpujil),
+      st("Dag 14 · ma 4 jan","Bacalar",1,"natuur",2,"±2u","water",G.water,"Korte tussenstop aan de lagune van zeven kleuren — bekend terrein, één nacht is genoeg.",P.bacalar),
+      st("Dag 15–16 · 5–6 jan","Puerto Morelos",2,"natuur",3,"±3u · lunchstop bij Tulum","reef",G.rif,"Terug waar de reis begon: snorkelen in het rifpark en twee dagen bijkomen — met het vliegveld op een half uur voor een stressloze vertrekdag.",P.pm),
+      S.vertrekPM
+    ]
+  },
+  V4: {
+    intro:"<strong>Rustig noorden.</strong> Geen zuidlus, dus het minste rijden en het laagste tempo: kerst aan het strand, twee volle Puuc-dagen, vier nachten Mérida met oud & nieuw, en twee nachten in vissersdorp Celestún tussen de flamingo's. Voor wie liever diepgang op minder plekken heeft dan kilometers.",
+    stats:[{num:"8",label:"stops"},{num:"±17u15",label:"totaal rijden"},{num:"3",label:"eennachtsstops"},{num:"0",label:"nachten in de jungle"}],
+    stops:[
+      S.pmStart,
+      st("Dag 2–4 · 23–25 dec","El Cuyo",3,"natuur",2.75,"±2u45","flamingo",G.kust,"Kerst aan zee in dit onontdekte stranddorpje. Uitvalsbasis voor Las Coloradas én de flamingotocht bij Río Lagartos — beide binnen een uur rijden.",P.elcuyo,"Kerst aan het strand"),
+      st("Dag 5 · za 26 dec","Izamal",1,"stad",3.25,"±3u15 · via Ek Balam","arch",G.geel,"Onderweg Ek Balam (rustige ruïne, beklimbaar). Izamal — de gele stad — is compact genoeg voor één nacht.",P.izamal),
+      st("Dag 6–7 · 27–28 dec","Uxmal · Santa Elena",2,"erfgoed",2,"±2u","pyramid",G.ruine,"Twee nachten geven een volle dag voor Uxmal én de complete Ruta Puuc (Kabah, Sayil, Labná, Loltún) zonder haast.",P.uxmal),
+      st("Dag 8–11 · 29 dec – 1 jan","Mérida",4,"stad",1.25,"±1u15","arch",G.stad2,"Vier nachten: historisch centrum, markten, musea, dagtrip naar de cenotes bij Homún — en oud & nieuw op de Plaza Grande.",P.merida,"Oud & nieuw op de Plaza Grande"),
+      st("Dag 12–13 · 2–3 jan","Celestún",2,"natuur",1.5,"±1u30","flamingo",G.rivier,"Vissersdorp in het biosfeerreservaat: bootrondvaart langs duizenden flamingo's, mangrovetunnels en een breed, leeg strand. Twee nachten, dus ook een luie stranddag.",P.celestun),
+      st("Dag 14 · ma 4 jan","Valladolid",1,"stad",3.5,"±3u30 · via de ringweg van Mérida","water",G.water,"Bekend terrein, maar de perfecte tussenstop terug naar het oosten — 's avonds een rustige cenoteduik zonder dagjesmensen.",P.valladolid),
+      st("Dag 15–16 · 5–6 jan","Puerto Morelos",2,"natuur",2,"±2u","reef",G.rif,"Snorkelen in het rifpark en twee dagen bijkomen — met het vliegveld op een half uur voor een stressloze vertrekdag.",P.pm),
+      S.vertrekPM
+    ]
+  }
+};
+
+const MAX_DRIVE = 4;
+const timelineEl = document.getElementById('timeline');
+const statStripEl = document.getElementById('statStrip');
+const introEl = document.getElementById('variantIntro');
+
+const map = L.map('map', {scrollWheelZoom:false});
+const tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution:'&copy; OpenStreetMap &copy; CARTO', subdomains:'abcd', maxZoom:19
+}).addTo(map);
+let tileFailed = false;
+tiles.on('tileerror', () => {
+  if (tileFailed) return; tileFailed = true;
+  document.querySelector('.map-caption').textContent = 'Kaart kon niet laden — download dit bestand en open het in je browser met internetverbinding.';
+});
+let activeLayer = L.layerGroup().addTo(map);
+let ghostLayer = L.layerGroup().addTo(map);
+
+function render(key){
+  const data = variants[key];
+  introEl.innerHTML = data.intro;
+  statStripEl.innerHTML = data.stats.map(s =>
+    `<div class="stat"><span class="num">${s.num}</span><span class="label">${s.label}</span></div>`
+  ).join('');
+
+  timelineEl.innerHTML = data.stops.map(s => {
+    const nightsDots = s.nights > 0 ? `<span class="nights" aria-label="${s.nights} nachten">${'<i></i>'.repeat(s.nights)}</span>` : '';
+    const nodeSize = s.nights > 0 ? 10 + Math.min(s.nights,3) * 2 : 8;
+    const barPct = Math.min(100, Math.round((s.drive / MAX_DRIVE) * 100));
+    const driveRow = s.driveLabel ? `<div class="drivebar-row"><div class="drivebar"><i style="width:${barPct}%"></i></div><span>${s.driveLabel}</span></div>` : '';
+    const feest = s.feest ? `<br><span class="feest">★ ${s.feest}</span>` : '';
+    return `
+      <li class="stop ${s.cat}">
+        <span class="node" style="width:${nodeSize}px;height:${nodeSize}px;top:${6 - (nodeSize-12)/2}px;"></span>
+        <div class="postcard" style="background:${s.grad}">
+          <svg class="pc-scene" viewBox="0 0 400 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+            <circle cx="315" cy="48" r="34" fill="rgba(242,233,216,0.35)"/>
+            <circle cx="315" cy="48" r="49" fill="none" stroke="rgba(242,233,216,0.18)" stroke-width="1.5"/>
+            <path d="M0 112 Q100 88 200 110 T400 102 L400 150 L0 150 Z" fill="rgba(21,43,38,0.28)"/>
+            <path d="M0 130 Q120 110 240 128 T400 124 L400 150 L0 150 Z" fill="rgba(21,43,38,0.45)"/>
+          </svg>
+          <svg class="pc-icon" viewBox="0 0 100 100"><use href="#icon-${s.icon}"/></svg>
+          <span class="pc-label">${s.place}</span>
+        </div>
+        <span class="daytag">${s.day}</span>
+        ${driveRow}
+        <h2>${s.place}${nightsDots}</h2>
+        <p>${s.text}${feest}</p>
+      </li>
+    `;
+  }).join('');
+
+  activeLayer.clearLayers();
+  ghostLayer.clearLayers();
+  let allPts = [];
+  Object.keys(variants).forEach(k => {
+    const pts = variants[k].stops.map(s => [s.lat, s.lng]);
+    allPts = allPts.concat(pts);
+    if (k !== key) {
+      ghostLayer.addLayer(L.polyline(pts, {color:'#F2E9D8', opacity:0.18, weight:2, dashArray:'2,8', lineCap:'round'}));
+    }
+  });
+  const pts = data.stops.map(s => [s.lat, s.lng]);
+  activeLayer.addLayer(L.polyline(pts, {color:'#3B9FB4', weight:3, dashArray:'2,10', lineCap:'round'}));
+  data.stops.forEach((s,i) => {
+    const icon = L.divIcon({className:'', html:`<div class="pin ${s.cat}">${i+1}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
+    activeLayer.addLayer(L.marker([s.lat, s.lng], {icon}).bindPopup(`<strong>${s.place}</strong><br>${s.day}`));
+  });
+  map.fitBounds(L.latLngBounds(allPts), {padding:[28,28]});
+}
+
+document.querySelectorAll('.toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toggle button').forEach(b => {
+      b.classList.remove('active'); b.setAttribute('aria-selected','false');
+    });
+    btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+    render(btn.dataset.v);
+  });
+});
+
+render('V1');
+</script>
+
+</body>
+</html>
